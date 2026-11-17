@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF82D374-4667-4CD1-B50E-4F93DE766A4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSintegra.Core", "src\OpenSintegra.Core\OpenSintegra.Core.csproj", "{E2598D10-170A-49EA-B49B-BF9AEB0E7F3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSintegra.Data", "src\OpenSintegra.Data\OpenSintegra.Data.csproj", "{FBB7F055-9A2C-46F0-935C-19FC20C99BD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSintegra.Reports", "src\OpenSintegra.Reports\OpenSintegra.Reports.csproj", "{62732EA8-7CF1-46F6-B8D3-3F850751AF69}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSintegra.Cli", "src\OpenSintegra.Cli\OpenSintegra.Cli.csproj", "{85761D15-9195-405D-91F4-C3BC4B58E8E1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSintegra.App", "src\OpenSintegra.App\OpenSintegra.App.csproj", "{E7B6AF94-5CCC-46EF-9AD8-FD2C41E0816E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E29E219B-19EC-4549-96A0-599A1DBFDF5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSintegra.Tests", "tests\OpenSintegra.Tests\OpenSintegra.Tests.csproj", "{EB6ED77C-EC5A-40F6-8B5D-351338CD9561}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E2598D10-170A-49EA-B49B-BF9AEB0E7F3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2598D10-170A-49EA-B49B-BF9AEB0E7F3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2598D10-170A-49EA-B49B-BF9AEB0E7F3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2598D10-170A-49EA-B49B-BF9AEB0E7F3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBB7F055-9A2C-46F0-935C-19FC20C99BD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBB7F055-9A2C-46F0-935C-19FC20C99BD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBB7F055-9A2C-46F0-935C-19FC20C99BD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBB7F055-9A2C-46F0-935C-19FC20C99BD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62732EA8-7CF1-46F6-B8D3-3F850751AF69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62732EA8-7CF1-46F6-B8D3-3F850751AF69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62732EA8-7CF1-46F6-B8D3-3F850751AF69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62732EA8-7CF1-46F6-B8D3-3F850751AF69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85761D15-9195-405D-91F4-C3BC4B58E8E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85761D15-9195-405D-91F4-C3BC4B58E8E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85761D15-9195-405D-91F4-C3BC4B58E8E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85761D15-9195-405D-91F4-C3BC4B58E8E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7B6AF94-5CCC-46EF-9AD8-FD2C41E0816E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7B6AF94-5CCC-46EF-9AD8-FD2C41E0816E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7B6AF94-5CCC-46EF-9AD8-FD2C41E0816E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7B6AF94-5CCC-46EF-9AD8-FD2C41E0816E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB6ED77C-EC5A-40F6-8B5D-351338CD9561}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB6ED77C-EC5A-40F6-8B5D-351338CD9561}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB6ED77C-EC5A-40F6-8B5D-351338CD9561}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB6ED77C-EC5A-40F6-8B5D-351338CD9561}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E2598D10-170A-49EA-B49B-BF9AEB0E7F3B} = {BF82D374-4667-4CD1-B50E-4F93DE766A4D}
+		{FBB7F055-9A2C-46F0-935C-19FC20C99BD5} = {BF82D374-4667-4CD1-B50E-4F93DE766A4D}
+		{62732EA8-7CF1-46F6-B8D3-3F850751AF69} = {BF82D374-4667-4CD1-B50E-4F93DE766A4D}
+		{85761D15-9195-405D-91F4-C3BC4B58E8E1} = {BF82D374-4667-4CD1-B50E-4F93DE766A4D}
+		{E7B6AF94-5CCC-46EF-9AD8-FD2C41E0816E} = {BF82D374-4667-4CD1-B50E-4F93DE766A4D}
+		{EB6ED77C-EC5A-40F6-8B5D-351338CD9561} = {E29E219B-19EC-4549-96A0-599A1DBFDF5A}
+	EndGlobalSection
+EndGlobal

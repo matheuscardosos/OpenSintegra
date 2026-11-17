@@ -1,0 +1,44 @@
+name: Relato de Erro (Bug Report)
+description: Reporte uma falha no parser, validador, auto-fix, SQLite, relatorios ou interface desktop.
+title: "[Bug]: "
+labels: ["bug", "triagem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por ajudar a melhorar o OpenSintegra! Por favor, NAO anexe arquivos Sintegra ou XMLs reais de clientes sem antes anonimizar CNPJs, inscricoes estaduais e razoes sociais.
+  - type: textarea
+    id: description
+    attributes:
+      label: Descricao do Problema
+      description: O que aconteceu e qual era o comportamento esperado?
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistema Operacional
+      options:
+        - Windows 10 / 11
+        - Linux (Ubuntu / Debian / Fedora / Arch)
+        - macOS (Apple Silicon / Intel)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versao do OpenSintegra
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Passos para Reproduzir
+      description: Informe o comando CLI executado ou a acao realizada na interface.
+      placeholder: |
+        1. Abrir arquivo Sintegra...
+        2. Filtrar competencia 202605...
+        3. Clicar em...
+    validations:
+      required: true

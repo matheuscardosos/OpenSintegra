@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>OpenSintegra.Core</RootNamespace>
+    <Description>Parser, validator, auto-fixer and fiscal cross-auditor for Convenio ICMS 57/95 Sintegra files.</Description>
+  </PropertyGroup>
+</Project>

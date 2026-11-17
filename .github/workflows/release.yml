@@ -1,0 +1,82 @@
+name: Cross-Platform Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            archive: OpenSintegra-${{ github.ref_name }}-linux-x64-portable.tar.gz
+          - os: windows-latest
+            rid: win-x64
+            archive: OpenSintegra-${{ github.ref_name }}-win-x64-portable.zip
+          - os: macos-latest
+            rid: osx-arm64
+            archive: OpenSintegra-${{ github.ref_name }}-osx-arm64-portable.tar.gz
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Run tests before publish
+        run: dotnet test OpenSintegra.sln -c Release
+
+      - name: Publish Desktop App (${{ matrix.rid }})
+        run: |
+          dotnet publish src/OpenSintegra.App/OpenSintegra.App.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o dist/${{ matrix.rid }}/app
+
+      - name: Publish CLI (${{ matrix.rid }})
+        run: |
+          dotnet publish src/OpenSintegra.Cli/OpenSintegra.Cli.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o dist/${{ matrix.rid }}/cli
+
+      - name: Package Windows Portable ZIP & Setup Installer
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart('v')
+          Compress-Archive -Path dist/${{ matrix.rid }}/* -DestinationPath ${{ matrix.archive }}
+          $iscc = Get-Command iscc -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress | Out-Null
+            $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          }
+          & $iscc "/DAppVersion=$ver" "/DPublishAppDir=$PWD\dist\${{ matrix.rid }}\app" "/DPublishCliDir=$PWD\dist\${{ matrix.rid }}\cli" "/DOutputDir=$PWD\dist-installers" packaging\windows\OpenSintegra.iss
+
+      - name: Package Linux Portable tar.gz & Debian .deb
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          tar -czf ${{ matrix.archive }} -C dist/${{ matrix.rid }} .
+          chmod +x packaging/linux/build-deb.sh
+          packaging/linux/build-deb.sh "$VER" "dist/${{ matrix.rid }}/app" "dist/${{ matrix.rid }}/cli" "dist-installers"
+
+      - name: Package macOS Portable tar.gz & .dmg
+        if: matrix.os == 'macos-latest'
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          tar -czf ${{ matrix.archive }} -C dist/${{ matrix.rid }} .
+          chmod +x packaging/macos/build-dmg.sh
+          packaging/macos/build-dmg.sh "$VER" "dist/${{ matrix.rid }}/app" "dist/${{ matrix.rid }}/cli" "dist-installers"
+
+      - name: Upload Release Assets (Portable + Installers)
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.archive }}
+            dist-installers/*

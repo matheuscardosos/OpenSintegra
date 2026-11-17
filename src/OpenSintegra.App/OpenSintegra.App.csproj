@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>OpenSintegra</AssemblyName>
+    <RootNamespace>OpenSintegra.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\brand\app.ico</ApplicationIcon>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\brand\app-256.png" LogicalName="OpenSintegra.Assets.app-icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenSintegra.Core\OpenSintegra.Core.csproj" />
+    <ProjectReference Include="..\OpenSintegra.Data\OpenSintegra.Data.csproj" />
+    <ProjectReference Include="..\OpenSintegra.Reports\OpenSintegra.Reports.csproj" />
+  </ItemGroup>
+</Project>

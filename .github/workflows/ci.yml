@@ -1,0 +1,33 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore OpenSintegra.sln
+
+      - name: Build solution (Release)
+        run: dotnet build OpenSintegra.sln --no-restore -c Release
+
+      - name: Run xUnit tests
+        run: dotnet test OpenSintegra.sln --no-build -c Release --verbosity normal

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=OpenSintegra Contabil
+Comment=Validador, Corretor e Auditoria Cruzada Sintegra (Convenio ICMS 57/95)
+Exec=/usr/bin/opensintegra %f
+Icon=opensintegra
+Terminal=false
+Categories=Office;Finance;
+StartupWMClass=OpenSintegra
+MimeType=text/plain;
