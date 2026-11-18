@@ -240,13 +240,6 @@ public sealed class XmlInvoiceDetailsWindow : Window
             new GridLength(44), new GridLength(66), new GridLength(95), new GridLength(54)
         };
 
-        Grid MakeGrid()
-        {
-            var g = new Grid();
-            foreach (var c in colLens) g.ColumnDefinitions.Add(new ColumnDefinition(c));
-            return g;
-        }
-
         void AddCell(Grid g, int col, string text, bool right, bool bold, string hex)
         {
             var tb = new TextBlock
@@ -264,8 +257,7 @@ public sealed class XmlInvoiceDetailsWindow : Window
             g.Children.Add(tb);
         }
 
-        var hdr = MakeGrid();
-        hdr.Margin = new Thickness(0, 0, 14, 0);
+        var hdr = UiTableHelpers.BuildRowGrid(colLens);
         AddCell(hdr, 0, "Item", true, true, "#334155");
         AddCell(hdr, 1, "Código", false, true, "#334155");
         AddCell(hdr, 2, "Descrição do Produto", false, true, "#334155");
@@ -307,44 +299,26 @@ public sealed class XmlInvoiceDetailsWindow : Window
         }
         else
         {
-            var lb = new ListBox
-            {
-                ItemsSource = items,
-                Background = Brushes.White,
-                BorderBrush = Brush.Parse("#E2E8F0"),
-                BorderThickness = new Thickness(1),
-                ItemTemplate = new FuncDataTemplate<XmlProductItem>((it, _) =>
+            var pad = new Thickness(5, 5);
+            var lb = UiTableHelpers.CreateRecycledListBox<XmlProductItem>(
+                items,
+                colLens,
+                (g, slots, it) =>
                 {
-                    if (it is null) return new Panel();
-                    var g = MakeGrid();
-                    AddCell(g, 0, it.NumItem, true, true, "#475569");
-                    AddCell(g, 1, it.CodProduto, false, false, "#334155");
-                    AddCell(g, 2, it.Descricao, false, false, "#0F172A");
-                    AddCell(g, 3, it.Ncm, false, false, "#475569");
-                    AddCell(g, 4, it.OrigCfop, false, true, "#1D4ED8");
-                    AddCell(g, 5, it.CstCsosn, false, false, "#475569");
-                    AddCell(g, 6, it.Unidade, false, false, "#475569");
-                    AddCell(g, 7, TaxIdValidator.FormatMilliBr(it.QuantidadeMilli), true, false, "#334155");
-                    AddCell(g, 8, $"R$ {TaxIdValidator.FormatCentsBrl(it.ValorBrutoCents)}", true, true, "#0F172A");
-                    AddCell(g, 9, $"{it.AliquotaIcmsBps / 100.0:N1}%", true, false, "#475569");
-                    return new Border
-                    {
-                        BorderBrush = Brush.Parse("#E2E8F0"),
-                        BorderThickness = new Thickness(0, 0, 0, 1),
-                        Child = g
-                    };
-                }, supportsRecycling: false)
-            };
-            lb.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
-            {
-                Setters =
-                {
-                    new Setter(TemplatedControl.PaddingProperty, new Thickness(0)),
-                    new Setter(MarginProperty, new Thickness(0)),
-                    new Setter(MinHeightProperty, 0.0),
-                    new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch)
-                }
-            });
+                    UiTableHelpers.SetCellSlot(g, slots, 0, it.NumItem, TextAlignment.Right, FontWeight.SemiBold, Brush.Parse("#475569"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 1, it.CodProduto, TextAlignment.Left, FontWeight.Normal, Brush.Parse("#334155"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 2, it.Descricao, TextAlignment.Left, FontWeight.Normal, Brush.Parse("#0F172A"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 3, it.Ncm, TextAlignment.Left, FontWeight.Normal, Brush.Parse("#475569"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 4, it.OrigCfop, TextAlignment.Left, FontWeight.SemiBold, Brush.Parse("#1D4ED8"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 5, it.CstCsosn, TextAlignment.Left, FontWeight.Normal, Brush.Parse("#475569"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 6, it.Unidade, TextAlignment.Left, FontWeight.Normal, Brush.Parse("#475569"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 7, TaxIdValidator.FormatMilliBr(it.QuantidadeMilli), TextAlignment.Right, FontWeight.Normal, Brush.Parse("#334155"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 8, $"R$ {TaxIdValidator.FormatCentsBrl(it.ValorBrutoCents)}", TextAlignment.Right, FontWeight.SemiBold, Brush.Parse("#0F172A"), 11.5, pad);
+                    UiTableHelpers.SetCellSlot(g, slots, 9, $"{it.AliquotaIcmsBps / 100.0:N1}%", TextAlignment.Right, FontWeight.Normal, Brush.Parse("#475569"), 11.5, pad);
+                },
+                borderThickness: new Thickness(1),
+                borderBrush: Brush.Parse("#E2E8F0"));
+            UiTableHelpers.AttachSyncedHeaderPadding(lb, hdr);
             Grid.SetRow(lb, 2);
             itemsLayout.Children.Add(lb);
         }

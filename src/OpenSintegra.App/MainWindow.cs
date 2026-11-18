@@ -1239,10 +1239,8 @@ public sealed class MainWindow : Window
             new GridLength(0.85, GridUnitType.Star), new GridLength(168)
         };
 
-        var table = CreateVirtualizedTable<XmlAuditDocumentRow>(
-            rows,
-            cols,
-            hdr =>
+        var table = rows.Count == 0
+            ? BuildEmptyTableWithHeader(cols, hdr =>
             {
                 AddHeaderCell(hdr, 0, "Mês", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, "Emissão", TextAlignment.Left);
@@ -1251,65 +1249,78 @@ public sealed class MainWindow : Window
                 AddHeaderCell(hdr, 4, "Status / Obs.", TextAlignment.Left);
                 AddHeaderCell(hdr, 5, "Valor XML", TextAlignment.Right);
                 AddHeaderCell(hdr, 6, "Ações", TextAlignment.Center);
-            },
-            (g, d) =>
-            {
-                if (d.IsCriticalGap) g.Background = BrushErrorBg;
-                else if (d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase)) g.Background = Brush.Parse("#EFF6FF");
-
-                AddBodyCellFast(g, 0, TaxIdValidator.FormatMonthLabel(d.YearMonth), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
-                AddBodyCellFast(g, 1, d.DataBr, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                AddBodyCellFast(g, 2, $"{d.Numero}/{d.Serie}", TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
-                AddBodyCellFast(g, 3, d.EmitNome, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-
-                string statusDisplay = d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase)
-                    ? $"{d.MatchStatus} ({d.Notes})"
-                    : d.MatchStatus;
-                IBrush statusBrush = d.IsCriticalGap
-                    ? BrushRed
-                    : (d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase) ? BrushBlueDark : BrushGreen);
-                AddBodyCellFast(g, 4, statusDisplay, TextAlignment.Left, FontWeight.SemiBold, statusBrush);
-                AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(d.XmlValorCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
-
-                var actRow = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 5,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-
-                var btnDetails = new Button
-                {
-                    Content = "Detalhes"
-                };
-                btnDetails.Classes.Add("row-action");
-                btnDetails.Click += async (_, _) => await OpenXmlInvoiceDetailsAsync(d);
-                actRow.Children.Add(btnDetails);
-
-                if (d.IsCriticalGap)
-                {
-                    var btnOne = new Button
-                    {
-                        Content = "Lançar"
-                    };
-                    btnOne.Classes.Add("primary");
-                    btnOne.Padding = new Thickness(9, 3);
-                    btnOne.FontSize = 11;
-                    btnOne.FontWeight = FontWeight.SemiBold;
-                    btnOne.Click += async (_, _) => await OpenInjectMissingDialogAsync(d);
-                    actRow.Children.Add(btnOne);
-                }
-
-                Grid.SetColumn(actRow, 6);
-                g.Children.Add(actRow);
-                g.Cursor = HandCursor;
-                g.Tapped += async (_, e) => { e.Handled = true; await OpenXmlInvoiceDetailsAsync(d); };
-            },
-            emptyMessage: _auditFilter == "MISSING"
+            }, _auditFilter == "MISSING"
                 ? "Excelente! Nenhuma nota fiscal de compra faltante neste período."
-                : "Nenhum documento XML neste filtro.",
-            listHeight: 400);
+                : "Nenhum documento XML neste filtro.")
+            : UiTableHelpers.WrapWithHeader(cols, hdr =>
+            {
+                AddHeaderCell(hdr, 0, "Mês", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, "Emissão", TextAlignment.Left);
+                AddHeaderCell(hdr, 2, "NF / Série", TextAlignment.Left);
+                AddHeaderCell(hdr, 3, "Fornecedor", TextAlignment.Left);
+                AddHeaderCell(hdr, 4, "Status / Obs.", TextAlignment.Left);
+                AddHeaderCell(hdr, 5, "Valor XML", TextAlignment.Right);
+                AddHeaderCell(hdr, 6, "Ações", TextAlignment.Center);
+            }, UiTableHelpers.CreateRecycledListBox<XmlAuditDocumentRow>(
+                rows,
+                cols,
+                (g, slots, d) =>
+                {
+                    g.Background = d.IsCriticalGap
+                        ? BrushErrorBg
+                        : (d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase) ? Brush.Parse("#EFF6FF") : Brushes.Transparent);
+
+                    UiTableHelpers.SetCellSlot(g, slots, 0, TaxIdValidator.FormatMonthLabel(d.YearMonth), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 1, d.DataBr, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 2, $"{d.Numero}/{d.Serie}", TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 3, d.EmitNome, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+
+                    string statusDisplay = d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase)
+                        ? $"{d.MatchStatus} ({d.Notes})"
+                        : d.MatchStatus;
+                    IBrush statusBrush = d.IsCriticalGap
+                        ? BrushRed
+                        : (d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase) ? BrushBlueDark : BrushGreen);
+                    UiTableHelpers.SetCellSlot(g, slots, 4, statusDisplay, TextAlignment.Left, FontWeight.SemiBold, statusBrush);
+                    UiTableHelpers.SetCellSlot(g, slots, 5, $"R$ {TaxIdValidator.FormatCentsBrl(d.XmlValorCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
+
+                    if (slots[6] is StackPanel act && act.Children.Count >= 2 && act.Children[1] is Button bOne)
+                        bOne.IsVisible = d.IsCriticalGap;
+                },
+                listHeight: 400,
+                initRowSlots: (g, slots) =>
+                {
+                    var actRow = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 5,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    var btnDetails = new Button { Content = "Detalhes" };
+                    btnDetails.Classes.Add("row-action");
+                    btnDetails.Click += async (_, _) =>
+                    {
+                        if (g.DataContext is XmlAuditDocumentRow cur)
+                            await OpenXmlInvoiceDetailsAsync(cur);
+                    };
+                    actRow.Children.Add(btnDetails);
+
+                    var btnOne = new Button { Content = "Lançar", Padding = new Thickness(9, 3), FontSize = 11, FontWeight = FontWeight.SemiBold };
+                    btnOne.Classes.Add("primary");
+                    btnOne.Click += async (_, _) =>
+                    {
+                        if (g.DataContext is XmlAuditDocumentRow cur)
+                            await OpenInjectMissingDialogAsync(cur);
+                    };
+                    actRow.Children.Add(btnOne);
+
+                    Grid.SetColumn(actRow, 6);
+                    slots[6] = actRow;
+                    g.Children.Add(actRow);
+                },
+                onActivateRow: d => _ = OpenXmlInvoiceDetailsAsync(d)));
 
         listStack.Children.Add(table);
         root.Children.Add(listCard);
@@ -1398,39 +1409,48 @@ public sealed class MainWindow : Window
             }
             else
             {
-                var listBox61 = CreateVirtualizedListBox<Reg61>(
+                var listBox61 = UiTableHelpers.CreateRecycledListBox<Reg61>(
                     initial61,
                     cols61,
-                    (g, r61) =>
+                    (g, slots, r61) =>
                     {
                         string mmYyyy = r61.DataEmissao.Length >= 6 ? $"{r61.DataEmissao[4..6]}{r61.DataEmissao[..4]}" : "";
                         int prodCnt = reg61RCountMap.TryGetValue(mmYyyy, out int mc) ? mc : 0;
 
-                        AddBodyCellFast(g, 0, r61.Line.ToString(), TextAlignment.Right, FontWeight.Normal, BrushMuted);
-                        AddBodyCellFast(g, 1, TaxIdValidator.FormatDateBr(r61.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
-                        AddBodyCellFast(g, 2, r61.Modelo, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                        AddBodyCellFast(g, 3, r61.NumInicialOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
-                        AddBodyCellFast(g, 4, r61.NumFinalOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
-                        AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushGreen);
-                        AddBodyCellFast(g, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                        UiTableHelpers.SetCellSlot(g, slots, 0, r61.Line.ToString(), TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                        UiTableHelpers.SetCellSlot(g, slots, 1, TaxIdValidator.FormatDateBr(r61.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
+                        UiTableHelpers.SetCellSlot(g, slots, 2, r61.Modelo, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                        UiTableHelpers.SetCellSlot(g, slots, 3, r61.NumInicialOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
+                        UiTableHelpers.SetCellSlot(g, slots, 4, r61.NumFinalOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
+                        UiTableHelpers.SetCellSlot(g, slots, 5, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushGreen);
+                        UiTableHelpers.SetCellSlot(g, slots, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
 
+                        if (slots[7] is Button btnItens)
+                        {
+                            btnItens.Content = prodCnt > 0 ? $"Itens mês ({prodCnt})" : "Ver mês";
+                            btnItens.Classes.Set("accent", prodCnt > 0);
+                        }
+                    },
+                    listHeight: 455,
+                    initRowSlots: (g, slots) =>
+                    {
                         var btnItens = new Button
                         {
-                            Content = prodCnt > 0 ? $"Itens mês ({prodCnt})" : "Ver mês",
                             Margin = new Thickness(4, 2),
                             HorizontalAlignment = HorizontalAlignment.Center,
                             VerticalAlignment = VerticalAlignment.Center
                         };
                         btnItens.Classes.Add("row-action");
-                        if (prodCnt > 0) btnItens.Classes.Add("accent");
-                        btnItens.Click += (_, _) => OpenCouponMonthDetails(r61);
+                        btnItens.Click += (_, _) =>
+                        {
+                            if (g.DataContext is Reg61 cur)
+                                OpenCouponMonthDetails(cur);
+                        };
                         Grid.SetColumn(btnItens, 7);
+                        slots[7] = btnItens;
                         g.Children.Add(btnItens);
-
-                        g.Cursor = HandCursor;
-                        g.Tapped += (_, e) => { e.Handled = true; OpenCouponMonthDetails(r61); };
                     },
-                    listHeight: 455);
+                    onActivateRow: OpenCouponMonthDetails);
 
                 txtSearch.TextChanged += (_, _) =>
                 {
@@ -1439,10 +1459,10 @@ public sealed class MainWindow : Window
                     _docSearchFilter = next;
                     var updated = Filter61();
                     listBox61.ItemsSource = updated;
-                    lblCount.Text = $"Exibindo {updated.Count} de {_scoped.Reg61Docs.Count} dia(s) (clique para ver itens do mês)";
+                    lblCount.Text = $"Exibindo {updated.Count} de {_scoped.Reg61Docs.Count} dia(s) (clique ou Enter para ver itens do mês)";
                 };
 
-                body61 = WrapWithHeader(cols61, hdr =>
+                body61 = UiTableHelpers.WrapWithHeader(cols61, hdr =>
                 {
                     AddHeaderCell(hdr, 0, "Linha", TextAlignment.Right);
                     AddHeaderCell(hdr, 1, "Data", TextAlignment.Left);
@@ -1499,40 +1519,49 @@ public sealed class MainWindow : Window
         }
         else
         {
-            var listBox50 = CreateVirtualizedListBox<Reg50>(
+            var listBox50 = UiTableHelpers.CreateRecycledListBox<Reg50>(
                 initial50,
                 cols50,
-                (g, r50) =>
+                (g, slots, r50) =>
                 {
                     int itemCnt = reg54CountMap.TryGetValue(NormDocKey(r50.Cnpj, r50.Modelo, r50.Serie, r50.Numero), out int cnt) ? cnt : 0;
 
-                    AddBodyCellFast(g, 0, TaxIdValidator.FormatDateBr(r50.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
-                    AddBodyCellFast(g, 1, TaxIdValidator.FormatCnpj(r50.Cnpj), TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                    AddBodyCellFast(g, 2, r50.Modelo, TextAlignment.Left, FontWeight.Normal, BrushMuted);
-                    AddBodyCellFast(g, 3, r50.Numero.TrimStart('0').PadLeft(1, '0'), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
-                    AddBodyCellFast(g, 4, r50.Cfop, TextAlignment.Left, FontWeight.SemiBold, isSaidaView ? BrushGreen : BrushBlueDark);
-                    AddBodyCellFast(g, 5, r50.Uf, TextAlignment.Left, FontWeight.Normal, BrushMuted);
-                    AddBodyCellFast(g, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
-                    AddBodyCellFast(g, 7, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
-                    AddBodyCellFast(g, 8, r50.Situacao, TextAlignment.Left, FontWeight.SemiBold, r50.Situacao == "S" ? BrushRed : BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 0, TaxIdValidator.FormatDateBr(r50.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 1, TaxIdValidator.FormatCnpj(r50.Cnpj), TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 2, r50.Modelo, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    UiTableHelpers.SetCellSlot(g, slots, 3, r50.Numero.TrimStart('0').PadLeft(1, '0'), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 4, r50.Cfop, TextAlignment.Left, FontWeight.SemiBold, isSaidaView ? BrushGreen : BrushBlueDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 5, r50.Uf, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    UiTableHelpers.SetCellSlot(g, slots, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 7, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                    UiTableHelpers.SetCellSlot(g, slots, 8, r50.Situacao, TextAlignment.Left, FontWeight.SemiBold, r50.Situacao == "S" ? BrushRed : BrushTextBody);
 
+                    if (slots[9] is Button btnItens)
+                    {
+                        btnItens.Content = itemCnt > 0 ? $"Itens ({itemCnt})" : "Resumo";
+                        btnItens.Classes.Set("accent", itemCnt > 0);
+                    }
+                },
+                listHeight: 455,
+                initRowSlots: (g, slots) =>
+                {
                     var btnItens = new Button
                     {
-                        Content = itemCnt > 0 ? $"Itens ({itemCnt})" : "Resumo",
                         Margin = new Thickness(4, 2),
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center
                     };
                     btnItens.Classes.Add("row-action");
-                    if (itemCnt > 0) btnItens.Classes.Add("accent");
-                    btnItens.Click += (_, _) => OpenInvoiceDetails(r50);
+                    btnItens.Click += (_, _) =>
+                    {
+                        if (g.DataContext is Reg50 cur)
+                            OpenInvoiceDetails(cur);
+                    };
                     Grid.SetColumn(btnItens, 9);
+                    slots[9] = btnItens;
                     g.Children.Add(btnItens);
-
-                    g.Cursor = HandCursor;
-                    g.Tapped += (_, e) => { e.Handled = true; OpenInvoiceDetails(r50); };
                 },
-                listHeight: 455);
+                onActivateRow: OpenInvoiceDetails);
 
             txtSearch.TextChanged += (_, _) =>
             {
@@ -1541,10 +1570,10 @@ public sealed class MainWindow : Window
                 _docSearchFilter = next;
                 var updated = Filter50();
                 listBox50.ItemsSource = updated;
-                lblCount.Text = $"Exibindo {updated.Count} de {source50.Count} (clique na nota para ver os itens)";
+                lblCount.Text = $"Exibindo {updated.Count} de {source50.Count} (clique ou Enter para ver os itens)";
             };
 
-            body50 = WrapWithHeader(cols50, hdr =>
+            body50 = UiTableHelpers.WrapWithHeader(cols50, hdr =>
             {
                 AddHeaderCell(hdr, 0, "Data", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, isSaidaView ? "CNPJ Destinatário" : "CNPJ Fornecedor", TextAlignment.Left);
@@ -1582,10 +1611,13 @@ public sealed class MainWindow : Window
             new GridLength(42), new GridLength(95), new GridLength(1.8, GridUnitType.Star),
             new GridLength(48), new GridLength(82), new GridLength(108), new GridLength(68)
         };
-        prodStack.Children.Add(CreateVirtualizedTable<TopProductRow>(
-            _scoped.TopSellingProducts.ToList(),
-            pCols,
-            hdr =>
+        var topProducts = _scoped.TopSellingProducts.ToList();
+        var prodRank = new Dictionary<TopProductRow, int>(topProducts.Count);
+        for (int i = 0; i < topProducts.Count; i++)
+            prodRank[topProducts[i]] = i + 1;
+
+        prodStack.Children.Add(topProducts.Count == 0
+            ? BuildEmptyTableWithHeader(pCols, hdr =>
             {
                 AddHeaderCell(hdr, 0, "#", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, "Código", TextAlignment.Left);
@@ -1594,20 +1626,31 @@ public sealed class MainWindow : Window
                 AddHeaderCell(hdr, 4, "Qtd. Vendida", TextAlignment.Right);
                 AddHeaderCell(hdr, 5, "Valor Total", TextAlignment.Right);
                 AddHeaderCell(hdr, 6, "% Vendas", TextAlignment.Right);
-            },
-            (g, p) =>
+            }, "Nenhum resumo mensal de itens vendidos (Reg. 61R ou Reg. 54 de saída) encontrado neste arquivo.")
+            : UiTableHelpers.WrapWithHeader(pCols, hdr =>
             {
-                int idx = _scoped.TopSellingProducts.ToList().IndexOf(p) + 1;
-                AddBodyCellFast(g, 0, $"{idx}.", TextAlignment.Left, FontWeight.SemiBold, BrushMuted);
-                AddBodyCellFast(g, 1, p.CodProduto, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                AddBodyCellFast(g, 2, p.Descricao, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
-                AddBodyCellFast(g, 3, p.Unidade, TextAlignment.Left, FontWeight.Normal, BrushMuted);
-                AddBodyCellFast(g, 4, TaxIdValidator.FormatMilliBr(p.QuantidadeMilli), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
-                AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(p.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushGreen);
-                AddBodyCellFast(g, 6, $"{p.SharePct:N1}%", TextAlignment.Right, FontWeight.Normal, BrushMuted);
-            },
-            emptyMessage: "Nenhum resumo mensal de itens vendidos (Reg. 61R ou Reg. 54 de saída) encontrado neste arquivo.",
-            listHeight: 280));
+                AddHeaderCell(hdr, 0, "#", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, "Código", TextAlignment.Left);
+                AddHeaderCell(hdr, 2, "Produto (Registro 75)", TextAlignment.Left);
+                AddHeaderCell(hdr, 3, "Un.", TextAlignment.Left);
+                AddHeaderCell(hdr, 4, "Qtd. Vendida", TextAlignment.Right);
+                AddHeaderCell(hdr, 5, "Valor Total", TextAlignment.Right);
+                AddHeaderCell(hdr, 6, "% Vendas", TextAlignment.Right);
+            }, UiTableHelpers.CreateRecycledListBox<TopProductRow>(
+                topProducts,
+                pCols,
+                (g, slots, p) =>
+                {
+                    int idx = prodRank.TryGetValue(p, out int r) ? r : 0;
+                    UiTableHelpers.SetCellSlot(g, slots, 0, $"{idx}.", TextAlignment.Left, FontWeight.SemiBold, BrushMuted);
+                    UiTableHelpers.SetCellSlot(g, slots, 1, p.CodProduto, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 2, p.Descricao, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 3, p.Unidade, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    UiTableHelpers.SetCellSlot(g, slots, 4, TaxIdValidator.FormatMilliBr(p.QuantidadeMilli), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 5, $"R$ {TaxIdValidator.FormatCentsBrl(p.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushGreen);
+                    UiTableHelpers.SetCellSlot(g, slots, 6, $"{p.SharePct:N1}%", TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                },
+                listHeight: 280)));
         root.Children.Add(prodCard);
 
         // Bottom: CFOP Summary
@@ -1746,10 +1789,8 @@ public sealed class MainWindow : Window
             new GridLength(65), new GridLength(95), new GridLength(55), new GridLength(50),
             new GridLength(1.0, GridUnitType.Star), new GridLength(1.8, GridUnitType.Star), new GridLength(70)
         };
-        ((StackPanel)diagCard.Child!).Children.Add(CreateVirtualizedTable<Diagnostic>(
-            filtered,
-            dCols,
-            hdr =>
+        ((StackPanel)diagCard.Child!).Children.Add(filtered.Count == 0
+            ? BuildEmptyTableWithHeader(dCols, hdr =>
             {
                 AddHeaderCell(hdr, 0, "Nível", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, "Código", TextAlignment.Left);
@@ -1758,27 +1799,37 @@ public sealed class MainWindow : Window
                 AddHeaderCell(hdr, 4, "Campo", TextAlignment.Left);
                 AddHeaderCell(hdr, 5, "Descrição", TextAlignment.Left);
                 AddHeaderCell(hdr, 6, "AutoFix", TextAlignment.Center);
-            },
-            (g, d) =>
+            }, "Nenhuma ocorrência neste filtro.")
+            : UiTableHelpers.WrapWithHeader(dCols, hdr =>
             {
-                IBrush sevBrush = d.Severity switch
+                AddHeaderCell(hdr, 0, "Nível", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, "Código", TextAlignment.Left);
+                AddHeaderCell(hdr, 2, "Linha", TextAlignment.Right);
+                AddHeaderCell(hdr, 3, "Reg.", TextAlignment.Left);
+                AddHeaderCell(hdr, 4, "Campo", TextAlignment.Left);
+                AddHeaderCell(hdr, 5, "Descrição", TextAlignment.Left);
+                AddHeaderCell(hdr, 6, "AutoFix", TextAlignment.Center);
+            }, UiTableHelpers.CreateRecycledListBox<Diagnostic>(
+                filtered,
+                dCols,
+                (g, slots, d) =>
                 {
-                    Severity.Error => BrushRed,
-                    Severity.Warning => BrushAmber,
-                    _ => BrushBlueInfo
-                };
-                AddBodyCellFast(g, 0, d.SeverityLabel, TextAlignment.Left, FontWeight.Bold, sevBrush);
-                AddBodyCellFast(g, 1, d.Code, TextAlignment.Left, FontWeight.SemiBold, BrushTextBody);
-                AddBodyCellFast(g, 2, d.Line.ToString(), TextAlignment.Right, FontWeight.Normal, BrushMuted);
-                AddBodyCellFast(g, 3, d.RecordType, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
-                AddBodyCellFast(g, 4, d.FieldName, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                AddBodyCellFast(g, 5, d.Message, TextAlignment.Left, FontWeight.Normal, BrushTextDark);
-                AddBodyCellFast(g, 6, d.AutoFixable ? "Sim" : "Não", TextAlignment.Center, FontWeight.SemiBold, d.AutoFixable ? BrushGreen : BrushMuted);
-                g.Cursor = HandCursor;
-                g.Tapped += (_, e) => { e.Handled = true; InspectLineAt(d.Line, d.ColumnStart, d.ColumnEnd); };
-            },
-            emptyMessage: "Nenhuma ocorrência neste filtro.",
-            listHeight: 330));
+                    IBrush sevBrush = d.Severity switch
+                    {
+                        Severity.Error => BrushRed,
+                        Severity.Warning => BrushAmber,
+                        _ => BrushBlueInfo
+                    };
+                    UiTableHelpers.SetCellSlot(g, slots, 0, d.SeverityLabel, TextAlignment.Left, FontWeight.Bold, sevBrush);
+                    UiTableHelpers.SetCellSlot(g, slots, 1, d.Code, TextAlignment.Left, FontWeight.SemiBold, BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 2, d.Line.ToString(), TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                    UiTableHelpers.SetCellSlot(g, slots, 3, d.RecordType, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 4, d.FieldName, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                    UiTableHelpers.SetCellSlot(g, slots, 5, d.Message, TextAlignment.Left, FontWeight.Normal, BrushTextDark);
+                    UiTableHelpers.SetCellSlot(g, slots, 6, d.AutoFixable ? "Sim" : "Não", TextAlignment.Center, FontWeight.SemiBold, d.AutoFixable ? BrushGreen : BrushMuted);
+                },
+                listHeight: 330,
+                onActivateRow: d => InspectLineAt(d.Line, d.ColumnStart, d.ColumnEnd))));
 
         root.Children.Add(diagCard);
         return root;
@@ -2667,105 +2718,23 @@ public sealed class MainWindow : Window
 
     // ==================== SHARED UI HELPERS & VIRTUALIZED TABLE ====================
 
-    private static Grid BuildRowGrid(GridLength[] cols)
-    {
-        var g = new Grid();
-        foreach (var c in cols)
-            g.ColumnDefinitions.Add(new ColumnDefinition(c));
-        return g;
-    }
-
-    private static ListBox CreateVirtualizedListBox<T>(
-        IReadOnlyList<T> items,
-        GridLength[] cols,
-        Action<Grid, T> bindRow,
-        double listHeight)
-    {
-        var listBox = new ListBox
-        {
-            ItemsSource = items,
-            Height = listHeight,
-            Background = Brushes.White,
-            BorderThickness = new Thickness(0),
-            ItemTemplate = new FuncDataTemplate<T>((item, _) =>
-            {
-                if (item is null) return new Panel();
-                var g = BuildRowGrid(cols);
-                g.Background = Brushes.Transparent;
-                bindRow(g, item);
-                return new Border
-                {
-                    BorderBrush = BrushBorderLight,
-                    BorderThickness = new Thickness(0, 1, 0, 0),
-                    Child = g
-                };
-            }, supportsRecycling: false)
-        };
-
-        listBox.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
-        {
-            Setters =
-            {
-                new Setter(TemplatedControl.PaddingProperty, new Thickness(0)),
-                new Setter(MarginProperty, new Thickness(0)),
-                new Setter(MinHeightProperty, 0.0),
-                new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch)
-            }
-        });
-
-        return listBox;
-    }
-
-    private static Control WrapWithHeader(GridLength[] cols, Action<Grid> buildHeader, ListBox listBox)
-    {
-        var outer = new Border
-        {
-            BorderBrush = BrushBorderLight,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            ClipToBounds = true
-        };
-
-        var hdr = BuildRowGrid(cols);
-        hdr.Background = BrushHeaderBg;
-        hdr.Margin = new Thickness(0, 0, 14, 0);
-        buildHeader(hdr);
-
-        var stack = new StackPanel();
-        stack.Children.Add(new Border { Background = BrushHeaderBg, Child = hdr });
-        stack.Children.Add(listBox);
-        outer.Child = stack;
-        return outer;
-    }
-
-    private static Control CreateVirtualizedTable<T>(
-        IReadOnlyList<T> items,
+    private static Control BuildEmptyTableWithHeader(
         GridLength[] cols,
         Action<Grid> buildHeader,
-        Action<Grid, T> bindRow,
-        string emptyMessage,
-        double listHeight)
+        string emptyMessage) => new Border
     {
-        if (items.Count == 0)
+        BorderBrush = BrushBorderLight,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(4),
+        Child = new StackPanel
         {
-            return new Border
+            Children =
             {
-                BorderBrush = BrushBorderLight,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-                Child = new StackPanel
-                {
-                    Children =
-                    {
-                        WrapWithHeader(cols, buildHeader, new ListBox { Height = 0, IsVisible = false }),
-                        new TextBlock { Text = emptyMessage, Margin = new Thickness(12), Foreground = BrushMuted, FontSize = 12 }
-                    }
-                }
-            };
+                UiTableHelpers.WrapWithHeader(cols, buildHeader, new ListBox { Height = 0, IsVisible = false }),
+                new TextBlock { Text = emptyMessage, Margin = new Thickness(12), Foreground = BrushMuted, FontSize = 12 }
+            }
         }
-
-        return WrapWithHeader(cols, buildHeader, CreateVirtualizedListBox(items, cols, bindRow, listHeight));
-    }
+    };
 
     private static Border BuildKpiCard(
         string iconPath,
