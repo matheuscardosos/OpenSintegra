@@ -239,7 +239,7 @@ public sealed class MainWindow : Window
 
         AddHandler(DragDrop.DragOverEvent, (_, e) =>
         {
-            e.DragEffects = e.Data.Contains(DataFormats.Files)
+            e.DragEffects = e.DataTransfer.Contains(DataFormat.File)
                 ? DragDropEffects.Copy
                 : DragDropEffects.None;
             e.Handled = true;
@@ -247,8 +247,8 @@ public sealed class MainWindow : Window
 
         AddHandler(DragDrop.DropEvent, (_, e) =>
         {
-            if (!e.Data.Contains(DataFormats.Files)) return;
-            var paths = e.Data.GetFiles()?
+            if (!e.DataTransfer.Contains(DataFormat.File)) return;
+            var paths = e.DataTransfer.TryGetFiles()?
                 .Select(f => f.TryGetLocalPath())
                 .Where(p => !string.IsNullOrWhiteSpace(p))
                 .Cast<string>()

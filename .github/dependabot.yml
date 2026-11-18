@@ -9,9 +9,14 @@ updates:
       avalonia:
         patterns:
           - "Avalonia*"
+      skiasharp:
+        patterns:
+          - "SkiaSharp*"
     ignore:
       - dependency-name: "Avalonia*"
         versions: [">= 12.0.0"]
+      - dependency-name: "SkiaSharp*"
+        versions: [">= 3.0.0"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
