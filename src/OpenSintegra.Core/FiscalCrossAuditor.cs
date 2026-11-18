@@ -530,30 +530,37 @@ public static class FiscalCrossAuditor
         int xmlComprasTotal = 0, xmlComprasLancadas = 0, xmlComprasOmissas = 0, xmlOutrasOmissas = 0;
         long xmlComprasOmissasCents = 0;
 
-        // Index Reg 50 by exact (Cnpj + Mod + Serie + NumMod1M) AND fallback (Mod + Serie + NumMod1M)
+        // Index Reg 50 across ALL months by:
+        // 1) exact (Cnpj + Mod + Serie + NumMod1M)
+        // 2) (Cnpj + NumMod1M) when Modelo/Serie was typed slightly differently in the ERP
+        // 3) fallback (Mod + Serie + NumMod1M) when XML issuer CNPJ is absent
         var sint50ByFullKey = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
+        var sint50ByCnpjNum = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
         var sint50ByDocKey = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
         foreach (var r50 in sintegra.Reg50)
         {
             string mod = r50.Modelo.Trim();
             string ser = NormalizeSerie(r50.Serie);
             long num = NormalizeDocNum(r50.Numero);
-            string fullKey = $"{r50.Cnpj.Trim()}|{mod}|{ser}|{num}";
+            string cnpjTrim = r50.Cnpj.Trim();
+            string fullKey = $"{cnpjTrim}|{mod}|{ser}|{num}";
+            string cnpjNumKey = $"{cnpjTrim}|{num}";
             string docKey = $"{mod}|{ser}|{num}";
 
-            if (!sint50ByFullKey.TryGetValue(fullKey, out var fl))
+            static void AddMap(Dictionary<string, List<Reg50>> map, string k, Reg50 row)
             {
-                fl = new List<Reg50>();
-                sint50ByFullKey[fullKey] = fl;
+                if (!map.TryGetValue(k, out var l))
+                {
+                    l = new List<Reg50>();
+                    map[k] = l;
+                }
+                l.Add(row);
             }
-            fl.Add(r50);
 
-            if (!sint50ByDocKey.TryGetValue(docKey, out var dl))
-            {
-                dl = new List<Reg50>();
-                sint50ByDocKey[docKey] = dl;
-            }
-            dl.Add(r50);
+            AddMap(sint50ByFullKey, fullKey, r50);
+            if (!string.IsNullOrEmpty(cnpjTrim))
+                AddMap(sint50ByCnpjNum, cnpjNumKey, r50);
+            AddMap(sint50ByDocKey, docKey, r50);
         }
 
         var sint70ByDocKey = new Dictionary<string, List<Reg70>>(StringComparer.Ordinal);
@@ -645,10 +652,18 @@ public static class FiscalCrossAuditor
             {
                 List<Reg50>? r50List = null;
                 string? matchedKey = null;
+                bool matchedWithModelSerieDiff = false;
                 if (sint50ByFullKey.TryGetValue(fullKey, out var exactList))
                 {
                     r50List = exactList;
                     matchedKey = fullKey;
+                }
+                else if (!string.IsNullOrEmpty(x.EmitCnpj.Trim()) &&
+                         sint50ByCnpjNum.TryGetValue($"{x.EmitCnpj.Trim()}|{num}", out var cnpjNumList))
+                {
+                    r50List = cnpjNumList;
+                    matchedKey = $"{x.EmitCnpj.Trim()}|{cnpjNumList[0].Modelo.Trim()}|{NormalizeSerie(cnpjNumList[0].Serie)}|{num}";
+                    matchedWithModelSerieDiff = true;
                 }
                 else if (string.IsNullOrEmpty(x.EmitCnpj) && sint50ByDocKey.TryGetValue(docKey, out var fbList))
                 {
@@ -668,6 +683,11 @@ public static class FiscalCrossAuditor
                     long sintTot = r50List.Sum(r => r.Situacao == "S" ? 0L : r.ValorTotalCents);
                     long sintIcms = r50List.Sum(r => r.Situacao == "S" ? 0L : r.ValorIcmsCents);
                     string sintCfops = string.Join(", ", r50List.Select(r => r.Cfop).Distinct());
+
+                    string? sintYm = r50List[0].DataEmissao.Length >= 6 ? r50List[0].DataEmissao[..6] : null;
+                    bool launchedInDifferentMonth = sintYm is not null && ym != "000000" && sintYm != ym;
+                    string sintDateBr = TaxIdValidator.FormatDateBr(r50List[0].DataEmissao);
+                    string sintMonthLbl = sintYm is not null ? TaxIdValidator.FormatMonthLabel(sintYm) : "-";
 
                     string matchStatus = "Lançada OK";
                     bool critical = false;
@@ -704,6 +724,21 @@ public static class FiscalCrossAuditor
                     else if (cat == XmlOperationCategory.CompraComercial)
                     {
                         xmlComprasLancadas++;
+                    }
+
+                    if (launchedInDifferentMonth)
+                    {
+                        string crossMonthMsg = $"Lançada no Sintegra em {sintDateBr} (mês {sintMonthLbl}, diferente da emissão XML {dataBr})";
+                        note = string.IsNullOrEmpty(note) ? crossMonthMsg : $"{note} | {crossMonthMsg}";
+                        findings.Add(new AuditFinding(
+                            "AUD-XML-006", Severity.Info, "XML", $"NF-e {x.Numero} Série {x.Serie}",
+                            $"NF-e emitida em {dataBr} foi encontrada lançada no Sintegra na competência {sintMonthLbl} ({sintDateBr}).",
+                            $"Mês {sintMonthLbl}", $"XML {TaxIdValidator.FormatMonthLabel(ym)}"));
+                    }
+                    if (matchedWithModelSerieDiff)
+                    {
+                        string diffModMsg = $"Localizada por CNPJ + Número com Modelo/Série diferente no Reg. 50 (Mod {r50List[0].Modelo} Série '{r50List[0].Serie.Trim()}')";
+                        note = string.IsNullOrEmpty(note) ? diffModMsg : $"{note} | {diffModMsg}";
                     }
 
                     if (ym != "000000" && cat == XmlOperationCategory.CompraComercial)

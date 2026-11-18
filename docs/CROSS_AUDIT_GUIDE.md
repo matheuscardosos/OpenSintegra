@@ -13,11 +13,14 @@ Ao analisar XMLs contra o Registro `50` e `70` do Sintegra, cada nota recebe uma
 5. **NFC-e Consumidor (`Modelo 65`) e Saídas Próprias:** Analisadas quanto ao volume consolidado frente ao Registro `61` ou `50`.
 6. **Eventos de Cancelamento (`110111`):** Cancelamentos detectados via XML ajustam o status esperado no Sintegra (`Situação = S`).
 
-## Correspondência Inteligente de Numeração
+## Correspondência Inteligente de Numeração e Todo o Período
+
+A busca ocorre sempre sobre **todo o arquivo Sintegra carregado** (todas as competências presentes, mesmo que a tela esteja filtrada para um único mês). Assim, uma nota emitida no final de um mês (ex.: `30/04`) e escriturada no mês seguinte (`02/05`) é encontrada normalmente sem gerar falso alerta de omissão, sendo sinalizada via observação (`AUD-XML-006`).
 
 Como o Registro `50` limita o número do documento a `6` dígitos, o cruzamento realiza pareamento normalizando:
 - Chave primária completa: `CNPJ + Modelo + SérieNormalizada + (Número % 1.000.000)`
-- Chave secundária de fallback (quando o CNPJ emitente diverge pontualmente): `Modelo + SérieNormalizada + (Número % 1.000.000)`
+- Chave secundária de fallback por emitente/número: `CNPJ + (Número % 1.000.000)` (captura divergências pontuais de Modelo/Série sem falso positivo de outros fornecedores)
+- Fallback sem CNPJ (quando o CNPJ emitente diverge pontualmente ou está vazio): `Modelo + SérieNormalizada + (Número % 1.000.000)`
 
 ## Cruzamento com SPED Fiscal (EFD ICMS/IPI)
 

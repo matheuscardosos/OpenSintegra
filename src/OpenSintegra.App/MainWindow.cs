@@ -1144,14 +1144,21 @@ public sealed class MainWindow : Window
             _auditFilter == "MISSING"
                 ? $"Notas Fiscais de Compra Não Lançadas ({rows.Count})"
                 : $"Todos os Documentos Analisados ({rows.Count})",
-            VectorIcons.DocumentText, null);
+            VectorIcons.DocumentText,
+            new TextBlock
+            {
+                Text = "Busca automática em todo o Sintegra | Clique na linha ou em Detalhes",
+                FontSize = 11,
+                Foreground = BrushMuted,
+                VerticalAlignment = VerticalAlignment.Center
+            });
         var listStack = (StackPanel)listCard.Child!;
 
         var cols = new[]
         {
-            new GridLength(68), new GridLength(82), new GridLength(76),
-            new GridLength(1.4, GridUnitType.Star), new GridLength(0.95, GridUnitType.Star),
-            new GridLength(0.95, GridUnitType.Star), new GridLength(115)
+            new GridLength(64), new GridLength(80), new GridLength(76),
+            new GridLength(1.3, GridUnitType.Star), new GridLength(0.95, GridUnitType.Star),
+            new GridLength(0.85, GridUnitType.Star), new GridLength(168)
         };
 
         var table = CreateVirtualizedTable<XmlAuditDocumentRow>(
@@ -1163,42 +1170,73 @@ public sealed class MainWindow : Window
                 AddHeaderCell(hdr, 1, "Emissão", TextAlignment.Left);
                 AddHeaderCell(hdr, 2, "NF / Série", TextAlignment.Left);
                 AddHeaderCell(hdr, 3, "Fornecedor", TextAlignment.Left);
-                AddHeaderCell(hdr, 4, "Status", TextAlignment.Left);
+                AddHeaderCell(hdr, 4, "Status / Obs.", TextAlignment.Left);
                 AddHeaderCell(hdr, 5, "Valor XML", TextAlignment.Right);
-                AddHeaderCell(hdr, 6, "Ação", TextAlignment.Center);
+                AddHeaderCell(hdr, 6, "Ações", TextAlignment.Center);
             },
             (g, d) =>
             {
                 if (d.IsCriticalGap) g.Background = BrushErrorBg;
+                else if (d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase)) g.Background = Brush.Parse("#EFF6FF");
+
                 AddBodyCellFast(g, 0, TaxIdValidator.FormatMonthLabel(d.YearMonth), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
                 AddBodyCellFast(g, 1, d.DataBr, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
                 AddBodyCellFast(g, 2, $"{d.Numero}/{d.Serie}", TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
                 AddBodyCellFast(g, 3, d.EmitNome, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                AddBodyCellFast(g, 4, d.MatchStatus, TextAlignment.Left, FontWeight.SemiBold, d.IsCriticalGap ? BrushRed : BrushGreen);
+
+                string statusDisplay = d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase)
+                    ? $"{d.MatchStatus} ({d.Notes})"
+                    : d.MatchStatus;
+                IBrush statusBrush = d.IsCriticalGap
+                    ? BrushRed
+                    : (d.Notes.Contains("mês ", StringComparison.OrdinalIgnoreCase) ? BrushBlueDark : BrushGreen);
+                AddBodyCellFast(g, 4, statusDisplay, TextAlignment.Left, FontWeight.SemiBold, statusBrush);
                 AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(d.XmlValorCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
+
+                var actRow = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 5,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                var btnDetails = new Button
+                {
+                    Content = "Detalhes",
+                    FontSize = 10.5,
+                    FontWeight = FontWeight.SemiBold,
+                    Background = Brush.Parse("#F1F5F9"),
+                    BorderBrush = Brush.Parse("#CBD5E1"),
+                    BorderThickness = new Thickness(1),
+                    Foreground = Brush.Parse("#334155"),
+                    Padding = new Thickness(8, 3),
+                    CornerRadius = new CornerRadius(4)
+                };
+                btnDetails.Click += async (_, _) => await OpenXmlInvoiceDetailsAsync(d);
+                actRow.Children.Add(btnDetails);
 
                 if (d.IsCriticalGap)
                 {
                     var btnOne = new Button
                     {
-                        Content = "Lançar NF",
-                        FontSize = 11,
+                        Content = "Lançar",
+                        FontSize = 10.5,
                         FontWeight = FontWeight.SemiBold,
                         Background = Brush.Parse("#2563EB"),
+                        BorderThickness = new Thickness(0),
                         Foreground = Brushes.White,
-                        Padding = new Thickness(10, 3),
-                        CornerRadius = new CornerRadius(4),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center
+                        Padding = new Thickness(9, 3),
+                        CornerRadius = new CornerRadius(4)
                     };
                     btnOne.Click += async (_, _) => await OpenInjectMissingDialogAsync(d);
-                    Grid.SetColumn(btnOne, 6);
-                    g.Children.Add(btnOne);
+                    actRow.Children.Add(btnOne);
                 }
-                else
-                {
-                    AddBodyCellFast(g, 6, d.CategoryLabel, TextAlignment.Center, FontWeight.Normal, BrushMuted);
-                }
+
+                Grid.SetColumn(actRow, 6);
+                g.Children.Add(actRow);
+                g.Cursor = HandCursor;
+                g.Tapped += async (_, e) => { e.Handled = true; await OpenXmlInvoiceDetailsAsync(d); };
             },
             emptyMessage: _auditFilter == "MISSING"
                 ? "Excelente! Nenhuma nota fiscal de compra faltante neste período."
@@ -2056,10 +2094,7 @@ public sealed class MainWindow : Window
         var matchedXmls = new List<XmlDocumentSummary>();
         foreach (var g in gapsToFind)
         {
-            var found = _loadedXmlDocs.FirstOrDefault(x =>
-                x.EmitCnpj.Trim() == g.EmitCnpj.Trim() &&
-                x.Numero.TrimStart('0') == g.Numero.TrimStart('0') &&
-                x.Modelo.Trim() == g.Modelo.Trim());
+            var found = FindLoadedXmlSummary(g);
             if (found is not null)
                 matchedXmls.Add(found);
         }
@@ -2233,6 +2268,38 @@ public sealed class MainWindow : Window
 
         var win = new InvoiceDetailsWindow(invoice, _doc, xmlMatch);
         win.ShowDialog(this);
+    }
+
+    private XmlDocumentSummary? FindLoadedXmlSummary(XmlAuditDocumentRow row) =>
+        _loadedXmlDocs.FirstOrDefault(x =>
+            x.EmitCnpj.Trim() == row.EmitCnpj.Trim() &&
+            x.Numero.Trim().TrimStart('0') == row.Numero.Trim().TrimStart('0') &&
+            x.Serie.Trim().TrimStart('0') == row.Serie.Trim().TrimStart('0') &&
+            x.Modelo.Trim() == row.Modelo.Trim())
+        ?? _loadedXmlDocs.FirstOrDefault(x =>
+            x.EmitCnpj.Trim() == row.EmitCnpj.Trim() &&
+            x.Numero.Trim().TrimStart('0') == row.Numero.Trim().TrimStart('0') &&
+            x.Modelo.Trim() == row.Modelo.Trim());
+
+    private async Task OpenXmlInvoiceDetailsAsync(XmlAuditDocumentRow row)
+    {
+        var xml = FindLoadedXmlSummary(row);
+        if (xml is null)
+        {
+            await ShowInfoDialogAsync(
+                "Detalhes da Nota XML",
+                $"Nota: {row.Numero}/{row.Serie} (Modelo {row.Modelo})\n" +
+                $"Fornecedor: {row.EmitNome} ({TaxIdValidator.FormatCnpj(row.EmitCnpj)})\n" +
+                $"Emissão: {row.DataBr}  |  Valor XML: R$ {TaxIdValidator.FormatCentsBrl(row.XmlValorCents)}\n" +
+                $"Status: {row.MatchStatus}\n\n" +
+                "Recarregue o pacote ZIP/pasta de XMLs para inspecionar a lista completa de produtos.");
+            return;
+        }
+
+        var dlg = new XmlInvoiceDetailsWindow(xml, row, _hasDocument && row.IsCriticalGap);
+        await dlg.ShowDialog(this);
+        if (dlg.LaunchRequested)
+            await OpenInjectMissingDialogAsync(row);
     }
 
     private void OpenCouponMonthDetails(Reg61 couponDay)

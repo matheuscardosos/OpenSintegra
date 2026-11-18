@@ -57,7 +57,7 @@ Quando `auto_prune_oldest` está habilitado e o arquivo `.db` ultrapassa `max_db
 Desenvolvida em **Avalonia UI 11** usando Fluent Theme em paleta clara tradicional contábil, com:
 - Barra de menus clássica + Ribbon com ícones vetoriais `StreamGeometry` (`VectorIcons.cs`).
 - Barra lateral orientada ao fluxo real do contador + área de trabalho filtrada por competência via `ComboBox`.
-- Listagens virtualizadas em `ListBox` separando **Entradas NF-e**, **Saídas NF-e** (Registro 50) e **Cupons NFC-e** (Registro 61), além de janelas dedicadas para detalhamento de itens de nota (`InvoiceDetailsWindow`), produtos mensais vendidos por cupom (`CouponMonthDetailsWindow`) e lançamento de XMLs faltantes (`InjectMissingXmlWindow`).
+- Listagens virtualizadas em `ListBox` separando **Entradas NF-e**, **Saídas NF-e** (Registro 50) e **Cupons NFC-e** (Registro 61), além de janelas dedicadas para detalhamento de itens de nota (`InvoiceDetailsWindow`), produtos mensais vendidos por cupom (`CouponMonthDetailsWindow`), detalhes de XMLs faltantes/auditados (`XmlInvoiceDetailsWindow`) e lançamento direto de XMLs faltantes (`InjectMissingXmlWindow`).
 - Controles gráficos próprios em `DrawingContext` (`MonthlyBarChartControl` com hover e destaque de mês selecionado; `CompositionDonutControl`).
 - Diálogo modal assíncrono não bloqueante (`ImportProgressWindow`) para arquivos extensos e ZIPs grandes.
 - Janela de pré-visualização em papel A4 com zoom, troca de modo de relatório e exportação (`ReportPreviewWindow`).
