@@ -183,4 +183,145 @@ public sealed class XmlInjectorAndTopProductsTests
         Assert.Equal(75_000L, view.TotalSaidasCents);
         Assert.Equal(35_000L, view.SaldoLiquidoCents);
     }
+
+    [Fact]
+    public void InjectXmlInvoices_HonorsCustomEntryDateAcrossMonths()
+    {
+        var sb = new StringBuilder();
+        sb.Append(SintegraFixtureBuilder.Reg10("11222333000181", "ISENTO", "EMPRESA ENTRADA DATA", "20260101", "20260228")).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg11()).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg61("20260131", 100_000)).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg90("11222333000181", "ISENTO", ("61", 1), ("99", 4))).Append("\r\n");
+        byte[] initialBytes = Encoding.Latin1.GetBytes(sb.ToString());
+
+        string nfeXml = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+              <NFe>
+                <infNFe Id="NFe31260100000000000191550010000077771000000011" versao="4.00">
+                  <ide>
+                    <mod>55</mod><serie>1</serie><nNF>7777</nNF>
+                    <dhEmi>2026-01-30T16:00:00-03:00</dhEmi>
+                    <dhSaiEnt>2026-02-02T09:30:00-03:00</dhSaiEnt>
+                    <tpNF>1</tpNF><finNFe>1</finNFe><natOp>VENDA</natOp>
+                  </ide>
+                  <emit><CNPJ>00000000000191</CNPJ><xNome>FORNECEDOR DATA</xNome><enderEmit><UF>MG</UF></enderEmit><IE>ISENTO</IE></emit>
+                  <dest><CNPJ>11222333000181</CNPJ></dest>
+                  <det nItem="1">
+                    <prod><cProd>P1</cProd><xProd>PRODUTO DATA</xProd><NCM>02013000</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>1.0000</qCom><vProd>250.00</vProd></prod>
+                    <imposto><ICMS><ICMSSN102><CSOSN>102</CSOSN></ICMSSN102></ICMS></imposto>
+                  </det>
+                  <total><ICMSTot><vBC>0.00</vBC><vICMS>0.00</vICMS><vProd>250.00</vProd><vNF>250.00</vNF></ICMSTot></total>
+                </infNFe>
+              </NFe>
+            </nfeProc>
+            """;
+
+        var xmlDoc = FiscalCrossAuditor.ParseFiscalXml("nf7777.xml", nfeXml);
+        Assert.NotNull(xmlDoc);
+        Assert.Equal("20260130", xmlDoc!.DataEmissao);
+        Assert.Equal("20260202", xmlDoc.DataSaiEnt);
+
+        var result = SintegraXmlInjector.InjectXmlInvoices(
+            initialBytes,
+            new[] { new XmlInjectionRequest(xmlDoc, "1102", "02/02/2026") },
+            simplesNacionalZeroIcms: true,
+            includeReg54Items: true);
+
+        Assert.Equal(1, result.InjectedInvoicesCount);
+        Assert.Equal(0, result.AfterReport.Summary.ErrorCount);
+        var afterDoc = SintegraParser.ParseBytes(result.UpdatedBytes);
+        Assert.Single(afterDoc.Reg50);
+        Assert.Equal("20260202", afterDoc.Reg50[0].DataEmissao);
+
+        var febScope = PeriodFilter.CreateScopedView(afterDoc, result.AfterReport, null, "202602");
+        Assert.Equal(25_000L, febScope.TotalEntradasCents);
+    }
+
+    [Fact]
+    public void ReprocessXmlInvoices_UpdatesExistingEntryDatesCfop_AndExportsFolderCopiesCleanly()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"os_reproc_{System.Guid.NewGuid():N}");
+        string subXmlDir = Path.Combine(tempRoot, "Janeiro");
+        string outCopiesDir = Path.Combine(tempRoot, "XMLs_Ajustados");
+        Directory.CreateDirectory(subXmlDir);
+
+        try
+        {
+            string xmlFile = Path.Combine(subXmlDir, "nf8888.xml");
+            string rawXml = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+                  <NFe>
+                    <infNFe Id="NFe31260100000000000191550010000088881000000011" versao="4.00">
+                      <ide>
+                        <mod>55</mod><serie>1</serie><nNF>8888</nNF>
+                        <dhEmi>2026-01-25T10:15:00-03:00</dhEmi>
+                        <tpNF>1</tpNF><finNFe>1</finNFe><natOp>VENDA</natOp>
+                      </ide>
+                      <emit><CNPJ>00000000000191</CNPJ><xNome>FORNECEDOR REPROC</xNome><enderEmit><UF>MG</UF></enderEmit><IE>ISENTO</IE></emit>
+                      <dest><CNPJ>11222333000181</CNPJ></dest>
+                      <det nItem="1">
+                        <prod><cProd>P88</cProd><xProd>MERCADORIA REPROC</xProd><NCM>02013000</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>2.0000</qCom><vProd>400.00</vProd></prod>
+                        <imposto><ICMS><ICMSSN102><CSOSN>102</CSOSN></ICMSSN102></ICMS></imposto>
+                      </det>
+                      <total><ICMSTot><vBC>0.00</vBC><vICMS>0.00</vICMS><vProd>400.00</vProd><vNF>400.00</vNF></ICMSTot></total>
+                    </infNFe>
+                  </NFe>
+                </nfeProc>
+                """;
+            File.WriteAllText(xmlFile, rawXml, Encoding.UTF8);
+
+            var sb = new StringBuilder();
+            sb.Append(SintegraFixtureBuilder.Reg10("11222333000181", "ISENTO", "EMPRESA REPROC LTDA", "20260101", "20260228")).Append("\r\n");
+            sb.Append(SintegraFixtureBuilder.Reg11()).Append("\r\n");
+            sb.Append(SintegraFixtureBuilder.Reg50("00000000000191", "20260125", "008888", "1102", 40_000, "T")).Append("\r\n");
+            sb.Append($"5400000000000191550010088881102000001{"P88",-14}{2000L:00000000000}{40000L:000000000000}{0:000000000000}{0:000000000000}{0:000000000000}{0:000000000000}{0:0000}").Append("\r\n");
+            sb.Append(SintegraFixtureBuilder.Reg75("20260101", "20260228", "P88", "MERCADORIA REPROC")).Append("\r\n");
+            sb.Append(SintegraFixtureBuilder.Reg90("11222333000181", "ISENTO", ("50", 1), ("54", 1), ("75", 1), ("99", 7))).Append("\r\n");
+            byte[] initialBytes = Encoding.Latin1.GetBytes(sb.ToString());
+
+            var xmls = FiscalCrossAuditor.LoadXmlsFromPath(tempRoot);
+            Assert.Single(xmls);
+            Assert.Equal("", xmls[0].DataSaiEnt);
+
+            var initialDoc = SintegraParser.ParseBytes(initialBytes);
+            var candidates = FiscalCrossAuditor.BuildPurchaseProcessCandidates(initialDoc, xmls);
+            Assert.Single(candidates);
+            Assert.True(candidates[0].AlreadyInSintegra);
+            Assert.Equal("20260125", candidates[0].ExistingSintegraDateYmd);
+
+            var requests = new[] { new XmlInjectionRequest(candidates[0].Xml, "1403", "03/02/2026") };
+            var repRes = SintegraXmlInjector.ReprocessXmlInvoices(initialBytes, requests);
+
+            Assert.Equal(1, repRes.UpdatedExistingCount);
+            Assert.Equal(0, repRes.InjectedInvoicesCount);
+            Assert.Equal(0, repRes.AfterReport.Summary.ErrorCount);
+
+            var updatedDoc = SintegraParser.ParseBytes(repRes.UpdatedBytes);
+            Assert.Equal("20260203", updatedDoc.Reg50[0].DataEmissao);
+            Assert.Equal("1403", updatedDoc.Reg50[0].Cfop);
+            Assert.Equal("1403", updatedDoc.Reg54[0].Cfop);
+
+            // Export adjusted XML copy to separate subfolder without modifying original XML
+            var copyRes = SintegraXmlInjector.ExportAdjustedXmlCopies(new[] { tempRoot }, outCopiesDir, requests);
+            Assert.Equal(1, copyRes.ExportedCount);
+            string copiedFile = Path.Combine(outCopiesDir, "nf8888.xml");
+            Assert.True(File.Exists(copiedFile));
+
+            // Original remains untouched (no <dhSaiEnt> added)
+            Assert.DoesNotContain("<dhSaiEnt>", File.ReadAllText(xmlFile));
+            // Copy has <dhSaiEnt> injected with 2026-02-03
+            string copiedXmlText = File.ReadAllText(copiedFile);
+            Assert.Contains("<dhSaiEnt>2026-02-03", copiedXmlText);
+
+            // Re-scanning tempRoot excludes XMLs_Ajustados so original is never double-counted
+            var rescanned = FiscalCrossAuditor.LoadXmlsFromPath(tempRoot);
+            Assert.Single(rescanned);
+        }
+        finally
+        {
+            try { Directory.Delete(tempRoot, true); } catch { }
+        }
+    }
 }

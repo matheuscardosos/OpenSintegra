@@ -43,6 +43,7 @@ public sealed class MainWindow : Window
     private SintegraDocument _doc = new();
     private ValidationReport _report = null!;
     private IReadOnlyList<XmlDocumentSummary> _loadedXmlDocs = Array.Empty<XmlDocumentSummary>();
+    private List<string> _loadedXmlSourcePaths = new();
     private SpedParsedData? _loadedSped;
     private AuditReport? _audit;
     private string? _lastXmlSourceLabel;
@@ -189,6 +190,8 @@ public sealed class MainWindow : Window
         miAbrir.Click += async (_, _) => await PickAndOpenSintegraAsync();
         var miAbrirXml = new MenuItem { Header = "Carregar XML / ZIP de Compras..." };
         miAbrirXml.Click += async (_, _) => await PickAndOpenXmlAsync();
+        var miAbrirXmlFolder = new MenuItem { Header = "Carregar Pasta de XMLs (inclui subpastas)..." };
+        miAbrirXmlFolder.Click += async (_, _) => await PickAndOpenXmlFolderAsync();
         var miAbrirSped = new MenuItem { Header = "Carregar SPED Fiscal (.txt)..." };
         miAbrirSped.Click += async (_, _) => await PickAndOpenSpedAsync();
         var miSalvar = new MenuItem { Header = "Salvar Sintegra (.txt)..." };
@@ -199,6 +202,7 @@ public sealed class MainWindow : Window
         miSair.Click += (_, _) => Close();
         mArquivo.Items.Add(miAbrir);
         mArquivo.Items.Add(miAbrirXml);
+        mArquivo.Items.Add(miAbrirXmlFolder);
         mArquivo.Items.Add(miAbrirSped);
         mArquivo.Items.Add(new Separator());
         mArquivo.Items.Add(miSalvar);
@@ -209,11 +213,14 @@ public sealed class MainWindow : Window
         var mFiscal = new MenuItem { Header = "Fiscal" };
         var miLancar = new MenuItem { Header = "Lançar Notas Faltantes no Sintegra..." };
         miLancar.Click += async (_, _) => await OpenInjectMissingDialogAsync(null);
+        var miReproc = new MenuItem { Header = "Reprocessar XMLs (Datas de Entrada / Faltantes)..." };
+        miReproc.Click += async (_, _) => await ReloadAndReprocessLastXmlAsync();
         var miAutoFix = new MenuItem { Header = "Corrigir Erros Estruturais (Auto-Fix)" };
         miAutoFix.Click += async (_, _) => await RunQuickFixAndRefreshAsync();
         var miCfop = new MenuItem { Header = "Resumo CFOP e Produtos Mais Vendidos" };
         miCfop.Click += (_, _) => NavigateTo(NavSection.CfopEProdutos);
         mFiscal.Items.Add(miLancar);
+        mFiscal.Items.Add(miReproc);
         mFiscal.Items.Add(miAutoFix);
         mFiscal.Items.Add(miCfop);
 
@@ -272,7 +279,12 @@ public sealed class MainWindow : Window
         var strip = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
 
         strip.Children.Add(CreateRibbonButton("Abrir", "Sintegra", VectorIcons.FolderOpen, "#2563EB", async () => await PickAndOpenSintegraAsync()));
-        strip.Children.Add(CreateRibbonButton("Carregar", "XML / ZIP", VectorIcons.UploadZip, "#0284C7", async () => await PickAndOpenXmlAsync()));
+
+        var btnXmlRibbon = CreateRibbonButton("Carregar", "XML / Pasta", VectorIcons.UploadZip, "#0284C7", null);
+        var xmlFlyout = BuildXmlActionsFlyout();
+        btnXmlRibbon.Click += (_, _) => xmlFlyout.ShowAt(btnXmlRibbon);
+        strip.Children.Add(btnXmlRibbon);
+
         strip.Children.Add(CreateToolbarDivider());
         strip.Children.Add(CreateRibbonButton("Lançar", "Faltantes", VectorIcons.CheckBadge, "#16A34A", async () => await OpenInjectMissingDialogAsync(null)));
         strip.Children.Add(CreateRibbonButton("Corrigir", "Sintegra", VectorIcons.Wrench, "#D97706", async () => await RunQuickFixAndRefreshAsync()));
@@ -587,6 +599,7 @@ public sealed class MainWindow : Window
         _report = SintegraValidator.Validate(_doc);
         _audit = null;
         _loadedXmlDocs = Array.Empty<XmlDocumentSummary>();
+        _loadedXmlSourcePaths.Clear();
         _selectedYearMonth = "ALL";
         PopulatePeriodComboBox();
         RebuildScopedAndRefresh();
@@ -618,6 +631,7 @@ public sealed class MainWindow : Window
         _report = SintegraValidator.Validate(_doc);
         _audit = null;
         _loadedXmlDocs = Array.Empty<XmlDocumentSummary>();
+        _loadedXmlSourcePaths.Clear();
         _selectedYearMonth = "ALL";
         PopulatePeriodComboBox();
         RebuildScopedAndRefresh();
@@ -799,7 +813,9 @@ public sealed class MainWindow : Window
 
         var btns = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         btns.Children.Add(CreatePrimaryButton("Abrir Sintegra (.txt)...", VectorIcons.FolderOpen, async () => await PickAndOpenSintegraAsync()));
-        var btnXml = CreateQuickActionButton("Abrir Pacote de XMLs (.zip)", VectorIcons.UploadZip, async () => await PickAndOpenXmlAsync());
+        var btnXml = CreateQuickActionButton("Carregar XML / ZIP / Pasta...", VectorIcons.UploadZip, null);
+        var welcomeXmlFlyout = BuildXmlActionsFlyout(includeReprocess: false);
+        btnXml.Click += (_, _) => welcomeXmlFlyout.ShowAt(btnXml);
         btnXml.HorizontalAlignment = HorizontalAlignment.Left;
         btns.Children.Add(btnXml);
         stack.Children.Add(btns);
@@ -1055,23 +1071,33 @@ public sealed class MainWindow : Window
     {
         var root = new StackPanel { Spacing = 12 };
 
-        var topBar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto") };
-        var btnLoadXml = CreateQuickActionButton("Carregar XML / ZIP de Compras...", VectorIcons.UploadZip, async () => await PickAndOpenXmlAsync());
+        var topBar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*,Auto") };
+        var btnLoadXml = CreateQuickActionButton("Carregar XML / Pasta...", VectorIcons.UploadZip, null);
+        var missXmlFlyout = BuildXmlActionsFlyout();
+        btnLoadXml.Click += (_, _) => missXmlFlyout.ShowAt(btnLoadXml);
         btnLoadXml.HorizontalAlignment = HorizontalAlignment.Left;
         Grid.SetColumn(btnLoadXml, 0);
         topBar.Children.Add(btnLoadXml);
 
         if (_audit is not null && _scoped.XmlComprasOmissas > 0)
         {
-            var btnInjectAll = CreatePrimaryButton($"Lançar Todas as Faltantes no Sintegra ({_scoped.XmlComprasOmissas})", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null));
+            var btnInjectAll = CreatePrimaryButton($"Lançar Todas as Faltantes ({_scoped.XmlComprasOmissas})", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null));
             btnInjectAll.Margin = new Thickness(10, 0, 0, 0);
             Grid.SetColumn(btnInjectAll, 1);
             topBar.Children.Add(btnInjectAll);
         }
 
+        if (_audit is not null && _loadedXmlDocs.Count > 0)
+        {
+            var btnReprocess = CreateQuickActionButton("Reprocessar XMLs (Datas)", VectorIcons.Wrench, async () => await OpenReprocessXmlDialogAsync());
+            btnReprocess.Margin = new Thickness(10, 0, 0, 0);
+            Grid.SetColumn(btnReprocess, 2);
+            topBar.Children.Add(btnReprocess);
+        }
+
         var btnExportMissPdf = CreateQuickActionButton("Relatório de Notas Não Lançadas", VectorIcons.DocumentText, () => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas));
         btnExportMissPdf.HorizontalAlignment = HorizontalAlignment.Right;
-        Grid.SetColumn(btnExportMissPdf, 3);
+        Grid.SetColumn(btnExportMissPdf, 4);
         topBar.Children.Add(btnExportMissPdf);
         root.Children.Add(topBar);
 
@@ -1938,29 +1964,115 @@ public sealed class MainWindow : Window
         RebuildScopedAndRefresh();
     }
 
+    private MenuFlyout BuildXmlActionsFlyout(bool includeReprocess = true)
+    {
+        var flyout = new MenuFlyout();
+        var miFileZip = new MenuItem { Header = "Selecionar Arquivo(s) XML ou Pacote ZIP..." };
+        miFileZip.Click += async (_, _) => await PickAndOpenXmlAsync();
+        var miFolder = new MenuItem { Header = "Selecionar Pasta de XMLs (lê subpastas)..." };
+        miFolder.Click += async (_, _) => await PickAndOpenXmlFolderAsync();
+        flyout.Items.Add(miFileZip);
+        flyout.Items.Add(miFolder);
+
+        if (includeReprocess)
+        {
+            flyout.Items.Add(new Separator());
+            var miReproc = new MenuItem { Header = "Reprocessar Último Pacote / Pasta (Datas / Faltantes)..." };
+            miReproc.Click += async (_, _) => await ReloadAndReprocessLastXmlAsync();
+            flyout.Items.Add(miReproc);
+        }
+        return flyout;
+    }
+
     private async Task PickAndOpenXmlAsync()
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Selecionar Pacote ZIP ou XML Fiscal",
-            AllowMultiple = false,
+            Title = "Selecionar Pacote ZIP ou XML(s) Fiscal(is)",
+            AllowMultiple = true,
             FileTypeFilter = new[]
             {
                 new FilePickerFileType("Pacotes ZIP / XML") { Patterns = new[] { "*.zip", "*.xml", "*.ZIP", "*.XML" } },
                 new FilePickerFileType("Todos os arquivos") { Patterns = new[] { "*.*" } }
             }
         });
-        if (files.Count > 0)
-        {
-            string? path = files[0].TryGetLocalPath();
-            if (!string.IsNullOrEmpty(path))
-                await LoadXmlOrZipAsync(path);
-        }
+        if (files.Count == 0) return;
+
+        var paths = files.Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Cast<string>()
+            .ToList();
+        if (paths.Count == 0) return;
+
+        string label = paths.Count == 1 ? Path.GetFileName(paths[0]) : $"{paths.Count} arquivo(s) XML";
+        string? dbPath = paths.Count == 1 ? paths[0] : Path.GetDirectoryName(paths[0]);
+        await LoadXmlSourcesAsync(paths, label, dbPath);
     }
 
-    private async Task LoadXmlOrZipAsync(string path)
+    private async Task PickAndOpenXmlFolderAsync()
     {
-        var dlg = new ImportProgressWindow("Importando XML / ZIP");
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Selecionar Pasta com XMLs / ZIPs (lê todas as subpastas)",
+            AllowMultiple = false
+        });
+        if (folders.Count == 0) return;
+        string? path = folders[0].TryGetLocalPath();
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return;
+
+        string dirName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (string.IsNullOrWhiteSpace(dirName)) dirName = path;
+        await LoadXmlSourcesAsync(new[] { path }, $"Pasta: {dirName}", path);
+    }
+
+    private async Task ReloadAndReprocessLastXmlAsync()
+    {
+        if (!_hasDocument)
+        {
+            await ShowInfoDialogAsync("Nenhum Sintegra Aberto", "Abra primeiro o arquivo Sintegra (.txt) onde deseja reprocessar os XMLs.");
+            return;
+        }
+
+        var existingSources = _loadedXmlSourcePaths
+            .Where(p => File.Exists(p) || Directory.Exists(p))
+            .ToList();
+
+        if (existingSources.Count == 0)
+        {
+            string? savedXml = _db.GetSetting("last_xml_path");
+            if (!string.IsNullOrWhiteSpace(savedXml) && (File.Exists(savedXml) || Directory.Exists(savedXml)))
+                existingSources.Add(savedXml);
+        }
+
+        if (existingSources.Count == 0)
+        {
+            await ShowInfoDialogAsync(
+                "Nenhum XML / Pasta Salvo",
+                "Carregue primeiro uma Pasta de XMLs ou pacote ZIP (em 'Carregar XML / Pasta') para depois reprocessar sem precisar selecionar novamente.");
+            return;
+        }
+
+        string first = existingSources[0];
+        string label = existingSources.Count > 1
+            ? $"{existingSources.Count} arquivo(s) XML"
+            : (Directory.Exists(first) ? $"Pasta: {Path.GetFileName(first.TrimEnd('\\', '/'))}" : Path.GetFileName(first));
+
+        bool loaded = await LoadXmlSourcesAsync(existingSources, label, existingSources.Count == 1 ? first : null);
+        if (loaded)
+            await OpenReprocessXmlDialogAsync();
+    }
+
+    private Task LoadXmlOrZipAsync(string path)
+    {
+        string label = Directory.Exists(path)
+            ? $"Pasta: {Path.GetFileName(path.TrimEnd('\\', '/'))}"
+            : Path.GetFileName(path);
+        return LoadXmlSourcesAsync(new[] { path }, label, path);
+    }
+
+    private async Task<bool> LoadXmlSourcesAsync(IReadOnlyList<string> paths, string label, string? dbSettingPath)
+    {
+        var dlg = new ImportProgressWindow("Importando XML / ZIP / Pasta");
         var progress = new Progress<(int Percent, string Status)>(p => dlg.UpdateProgress(p.Percent, p.Status));
         List<XmlDocumentSummary>? xmls = null;
         AuditReport? result = null;
@@ -1972,7 +2084,7 @@ public sealed class MainWindow : Window
             {
                 await Task.Run(() =>
                 {
-                    xmls = FiscalCrossAuditor.LoadXmlsFromPath(path, progress, dlg.Token);
+                    xmls = FiscalCrossAuditor.LoadXmlsFromPaths(paths, progress, dlg.Token);
                     if (_hasDocument)
                     {
                         ((IProgress<(int, string)>)progress).Report((95, $"Cruzando {xmls.Count} XML(s) com o Sintegra..."));
@@ -1988,24 +2100,29 @@ public sealed class MainWindow : Window
 
         await dlg.ShowDialog(this);
 
-        if (failure is OperationCanceledException) return;
+        if (failure is OperationCanceledException) return false;
         if (failure is not null)
         {
             await ShowInfoDialogAsync("Erro na leitura de XML", failure.Message);
-            return;
+            return false;
         }
-        if (xmls is null) return;
+        if (xmls is null) return false;
 
         _loadedXmlDocs = xmls;
+        _loadedXmlSourcePaths = paths.ToList();
         _audit = result;
-        _lastXmlSourceLabel = Path.GetFileName(path);
-        try { _db.SetSetting("last_xml_path", path); } catch { }
+        _lastXmlSourceLabel = label;
+        if (!string.IsNullOrWhiteSpace(dbSettingPath))
+        {
+            try { _db.SetSetting("last_xml_path", dbSettingPath); } catch { }
+        }
 
         if (_hasDocument && _doc.Reg10 is not null)
         {
             try { _db.RecordImport(_doc, _report, _audit, _currentFileName, _lastXmlSourceLabel); } catch { }
         }
         RebuildScopedAndRefresh();
+        return true;
     }
 
     private async Task PickAndOpenSpedAsync()
@@ -2082,33 +2199,65 @@ public sealed class MainWindow : Window
             return;
         }
 
-        var matchedXmls = new List<XmlDocumentSummary>();
+        var items = new List<XmlPurchaseProcessCandidate>();
         foreach (var g in gapsToFind)
         {
             var found = FindLoadedXmlSummary(g);
             if (found is not null)
-                matchedXmls.Add(found);
+                items.Add(new XmlPurchaseProcessCandidate(found, AlreadyInSintegra: false));
         }
 
-        if (matchedXmls.Count == 0)
+        if (items.Count == 0)
         {
-            await ShowInfoDialogAsync("XMLs Indisponíveis", "Recarregue o pacote ZIP de XMLs para realizar o lançamento detalhado no Sintegra.");
+            await ShowInfoDialogAsync("XMLs Indisponíveis", "Recarregue o pacote ZIP ou a pasta de XMLs para realizar o lançamento detalhado no Sintegra.");
             return;
         }
 
+        await RunXmlProcessDialogAsync(items, isReprocessMode: false);
+    }
+
+    private async Task OpenReprocessXmlDialogAsync()
+    {
+        if (!_hasDocument)
+        {
+            await ShowInfoDialogAsync("Nenhum Sintegra Aberto", "Abra primeiro o arquivo Sintegra (.txt) para reprocessar os XMLs.");
+            return;
+        }
+
+        if (_audit is null || _loadedXmlDocs.Count == 0)
+        {
+            await PickAndOpenXmlAsync();
+            if (_audit is null || _loadedXmlDocs.Count == 0) return;
+        }
+
+        var items = FiscalCrossAuditor.BuildPurchaseProcessCandidates(_doc, _loadedXmlDocs, _selectedYearMonth);
+        if (items.Count == 0)
+        {
+            await ShowInfoDialogAsync("Sem XMLs de Compra", "Nenhuma NF-e de compra encontrada nos XMLs para a competência selecionada.");
+            return;
+        }
+
+        await RunXmlProcessDialogAsync(items, isReprocessMode: true);
+    }
+
+    private async Task RunXmlProcessDialogAsync(IReadOnlyList<XmlPurchaseProcessCandidate> items, bool isReprocessMode)
+    {
         string buyerUf = _doc.Reg10?.Uf.Trim() ?? "MG";
         string regime = _doc.Reg10 is not null ? _db.GetCompanyTaxRegime(_doc.Reg10.Cnpj) : "Simples Nacional";
 
-        var dlg = new InjectMissingXmlWindow(matchedXmls, buyerUf, regime);
+        var dlg = new InjectMissingXmlWindow(
+            items,
+            buyerUf,
+            regime,
+            isReprocessMode,
+            hasXmlSource: _loadedXmlSourcePaths.Count > 0);
         bool? confirmed = await dlg.ShowDialog<bool?>(this);
         if (confirmed != true || dlg.ConfirmedRequests is null || dlg.ConfirmedRequests.Count == 0)
             return;
 
-        var res = SintegraXmlInjector.InjectXmlInvoices(
-            _currentBytes,
-            dlg.ConfirmedRequests,
-            dlg.SimplesZeroIcms,
-            dlg.IncludeItems54);
+        var res = isReprocessMode
+            ? SintegraXmlInjector.ReprocessXmlInvoices(_currentBytes, dlg.ConfirmedRequests, dlg.SimplesZeroIcms, dlg.IncludeItems54)
+            : SintegraXmlInjector.InjectXmlInvoices(_currentBytes, dlg.ConfirmedRequests, dlg.SimplesZeroIcms, dlg.IncludeItems54);
 
         _currentBytes = res.UpdatedBytes;
         _hasUnsavedChanges = true;
@@ -2117,14 +2266,91 @@ public sealed class MainWindow : Window
         _report = res.AfterReport;
         _audit = FiscalCrossAuditor.RunCrossAudit(_doc, _loadedXmlDocs, _loadedSped);
 
+        string? autoSavedPath = null;
+        if (dlg.AutoSaveUpdatedSintegra && !string.IsNullOrEmpty(_currentFilePath))
+        {
+            autoSavedPath = BuildUpdatedSintegraPath(_currentFilePath);
+            await File.WriteAllBytesAsync(autoSavedPath, _currentBytes);
+            _hasUnsavedChanges = false;
+            _currentFilePath = autoSavedPath;
+            _currentFileName = Path.GetFileName(autoSavedPath);
+            try { _db.SetSetting("last_sintegra_path", autoSavedPath); } catch { }
+        }
+
+        XmlCopyExportResult? xmlCopyResult = null;
+        if (dlg.ExportAdjustedXmlCopies && _loadedXmlSourcePaths.Count > 0)
+        {
+            string outXmlDir = ResolveAdjustedXmlOutputDirectory();
+            xmlCopyResult = await Task.Run(() =>
+                SintegraXmlInjector.ExportAdjustedXmlCopies(_loadedXmlSourcePaths, outXmlDir, dlg.ConfirmedRequests));
+        }
+
+        if (_doc.Reg10 is not null)
+        {
+            try { _db.RecordImport(_doc, _report, _audit, _currentFileName, _lastXmlSourceLabel); } catch { }
+        }
+
         PopulatePeriodComboBox();
         RebuildScopedAndRefresh();
 
+        var msg = new StringBuilder();
+        if (res.InjectedInvoicesCount > 0)
+            msg.AppendLine($"• {res.InjectedInvoicesCount} nota(s) incluída(s) ({res.GeneratedReg54Items} itens Reg. 54, {res.GeneratedReg75Products} produtos Reg. 75).");
+        if (res.UpdatedExistingCount > 0)
+            msg.AppendLine($"• {res.UpdatedExistingCount} nota(s) já lançada(s) atualizada(s) no Registro 50 (Data de Entrada / CFOP).");
+        if (res.InjectedInvoicesCount == 0 && res.UpdatedExistingCount == 0)
+            msg.AppendLine("• Nenhuma alteração de data ou CFOP necessária no Sintegra (valores mantidos).");
+
+        msg.AppendLine();
+        msg.AppendLine($"Validação após processamento: {res.AfterReport.Summary.ErrorCount} erro(s), {res.AfterReport.Summary.WarningCount} aviso(s).");
+
+        if (autoSavedPath is not null)
+        {
+            msg.AppendLine();
+            msg.AppendLine($"Sintegra salvo automaticamente em:\n{autoSavedPath}");
+        }
+        else
+        {
+            msg.AppendLine();
+            msg.AppendLine("Clique em 'Salvar Sintegra Atualizado' no topo para gravar o arquivo em disco.");
+        }
+
+        if (xmlCopyResult is not null)
+        {
+            msg.AppendLine();
+            msg.AppendLine($"Cópias de XML ajustadas ({xmlCopyResult.ExportedCount} arquivo(s)) salvas em:\n{xmlCopyResult.OutputDirectory}");
+            msg.AppendLine("(Os XMLs originais permaneceram intactos para preservar a assinatura SEFAZ.)");
+        }
+
         await ShowInfoDialogAsync(
-            "Notas Lançadas no Sintegra!",
-            $"{res.InjectedInvoicesCount} nota(s) fiscal(is) incluída(s) no Sintegra ({res.GeneratedReg54Items} itens Reg. 54, {res.GeneratedReg75Products} produtos Reg. 75).\n\n" +
-            $"Validação após lançamento: {res.AfterReport.Summary.ErrorCount} erro(s), {res.AfterReport.Summary.WarningCount} aviso(s).\n\n" +
-            "Clique no botão verde 'Salvar Sintegra Atualizado' no topo para gravar o novo arquivo .txt em disco.");
+            isReprocessMode ? "Reprocessamento Concluído!" : "Notas Lançadas no Sintegra!",
+            msg.ToString().TrimEnd());
+    }
+
+    private static string BuildUpdatedSintegraPath(string currentPath)
+    {
+        string dir = Path.GetDirectoryName(currentPath) ?? ".";
+        string nameNoExt = Path.GetFileNameWithoutExtension(currentPath);
+        string ext = Path.GetExtension(currentPath);
+        if (string.IsNullOrWhiteSpace(ext)) ext = ".txt";
+
+        if (nameNoExt.EndsWith("_ATUALIZADO", StringComparison.OrdinalIgnoreCase))
+            return Path.Combine(dir, $"{nameNoExt}{ext}");
+
+        return Path.Combine(dir, $"{nameNoExt}_ATUALIZADO{ext}");
+    }
+
+    private string ResolveAdjustedXmlOutputDirectory()
+    {
+        string first = _loadedXmlSourcePaths[0];
+        if (Directory.Exists(first))
+            return Path.Combine(first, "XMLs_Ajustados");
+
+        if (!string.IsNullOrEmpty(_currentFilePath))
+            return Path.Combine(Path.GetDirectoryName(_currentFilePath) ?? ".", "XMLs_Ajustados");
+
+        string parent = Path.GetDirectoryName(first) ?? ".";
+        return Path.Combine(parent, Path.GetFileNameWithoutExtension(first) + "_XMLs_Ajustados");
     }
 
     private async Task RunQuickFixAndRefreshAsync()
@@ -2648,7 +2874,7 @@ public sealed class MainWindow : Window
         return btn;
     }
 
-    private static Button CreateQuickActionButton(string label, string iconPath, Action onClick)
+    private static Button CreateQuickActionButton(string label, string iconPath, Action? onClick)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         row.Children.Add(VectorIcons.Create(iconPath, "#2563EB", 15));
@@ -2672,7 +2898,8 @@ public sealed class MainWindow : Window
             CornerRadius = new CornerRadius(5),
             Padding = new Thickness(10, 7)
         };
-        btn.Click += (_, _) => onClick();
+        if (onClick is not null)
+            btn.Click += (_, _) => onClick();
         return btn;
     }
 

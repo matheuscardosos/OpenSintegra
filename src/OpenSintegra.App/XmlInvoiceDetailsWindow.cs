@@ -129,7 +129,10 @@ public sealed class XmlInvoiceDetailsWindow : Window
         AddKv(0, 0, "Fornecedor / Emitente", string.IsNullOrWhiteSpace(xml.EmitNome) ? "-" : xml.EmitNome);
         AddKv(1, 0, "CNPJ / CPF", TaxIdValidator.FormatCnpj(xml.EmitCnpj));
         AddKv(2, 0, "IE / UF Emitente", $"{ieStr} ({ufStr})");
-        AddKv(3, 0, "Data de Emissão", TaxIdValidator.FormatDateBr(xml.DataEmissao));
+        string dtText = !string.IsNullOrWhiteSpace(xml.DataSaiEnt) && xml.DataSaiEnt != xml.DataEmissao
+            ? $"{TaxIdValidator.FormatDateBr(xml.DataEmissao)} (Saída: {TaxIdValidator.FormatDateBr(xml.DataSaiEnt)})"
+            : TaxIdValidator.FormatDateBr(xml.DataEmissao);
+        AddKv(3, 0, "Emissão / Saída XML", dtText);
 
         long frete = xml.FullData?.FreteCents ?? 0;
         long st = xml.FullData?.IcmsStCents ?? 0;

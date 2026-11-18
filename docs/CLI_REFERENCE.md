@@ -37,7 +37,14 @@ opensintegra-cli inspect <arquivo.txt> --line <número_linha>
 Executa auditoria cruzada do Sintegra contra pacotes `.zip`/pastas de XML e/ou SPED Fiscal.
 
 ```bash
-opensintegra-cli audit <sintegra.txt> [--xml pacote.zip] [--sped sped.txt] [--month YYYYMM] [--json]
+opensintegra-cli audit <sintegra.txt> [--xml pacote_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--json]
+```
+
+### `reprocess-xml`
+Reprocessa XMLs (de `.zip` ou pasta inteira recursivamente) atualizando a Data de Entrada e/ou CFOP no Registro `50`, incluindo notas faltantes, salvando automaticamente como `_ATUALIZADO.txt` (ou caminho `-o`) e opcionalmente gerando cópias ajustadas dos XMLs em pasta separada mantendo os originais intactos.
+
+```bash
+opensintegra-cli reprocess-xml <sintegra.txt> --xml <pacote_ou_pasta> [--entry-date DD/MM/AAAA] [--cfop 1102] [--only-missing] [--copy-xml-dir pasta_copias] [-o saída.txt]
 ```
 
 ### `export-pdf` e `export-xlsx`

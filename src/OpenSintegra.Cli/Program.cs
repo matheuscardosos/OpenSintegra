@@ -46,6 +46,7 @@ internal static class Program
                 "split" => RunSplit(rest),
                 "inspect" => RunInspect(rest),
                 "audit" => RunAudit(rest),
+                "reprocess-xml" => RunReprocessXml(rest),
                 "export-pdf" => RunExportReport(rest, isPdf: true),
                 "export-xlsx" => RunExportReport(rest, isPdf: false),
                 "db-stats" => RunDbStats(rest),
@@ -78,6 +79,7 @@ internal static class Program
         Console.WriteLine("  split <anual.txt> [-d pasta_saída]");
         Console.WriteLine("  inspect <sintegra.txt> --line <número>");
         Console.WriteLine("  audit <sintegra.txt> [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--json]");
+        Console.WriteLine("  reprocess-xml <sintegra.txt> --xml <zip_ou_pasta> [--entry-date DD/MM/AAAA] [--cfop 1102] [--only-missing] [--copy-xml-dir pasta] [-o saída.txt]");
         Console.WriteLine("  export-pdf <sintegra.txt> [-o relatório.pdf] [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--regime nome]");
         Console.WriteLine("  export-xlsx <sintegra.txt> [-o planilha.xlsx] [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--regime nome]");
         Console.WriteLine("  db-stats [--db path] [--limit-mb N]");
@@ -248,6 +250,73 @@ internal static class Program
         foreach (var gap in scoped.XmlDocumentRows.Where(r => r.IsCriticalGap))
             Console.WriteLine($"  [OMISSA] {gap.DataBr} NF {gap.Numero}/{gap.Serie} | {gap.EmitNome} | R$ {TaxIdValidator.FormatCentsBrl(gap.XmlValorCents)}");
 
+        return 0;
+    }
+
+    private static int RunReprocessXml(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("Informe o arquivo Sintegra (.txt).");
+
+        string sintPath = args[0];
+        string? xmlPath = GetOption(args, "--xml");
+        if (string.IsNullOrWhiteSpace(xmlPath))
+            throw new ArgumentException("Informe o pacote ZIP ou a pasta de XMLs com --xml <caminho>.");
+
+        string? entryDateOpt = GetOption(args, "--entry-date");
+        string? parsedEntryDate = null;
+        if (!string.IsNullOrWhiteSpace(entryDateOpt))
+        {
+            parsedEntryDate = TaxIdValidator.ParseFlexibleDateYyyyMmDd(entryDateOpt)
+                ?? throw new ArgumentException($"Data de entrada inválida: {entryDateOpt}. Use DD/MM/AAAA ou AAAAMMDD.");
+        }
+
+        string? cfopOpt = GetOption(args, "--cfop");
+        if (!string.IsNullOrWhiteSpace(cfopOpt) && !TaxIdValidator.ValidateCfop(cfopOpt))
+            throw new ArgumentException($"CFOP inválido: {cfopOpt}");
+
+        bool onlyMissing = HasFlag(args, "--only-missing");
+        string? month = GetOption(args, "--month");
+        string? copyXmlDir = GetOption(args, "--copy-xml-dir");
+
+        string sintDir = Path.GetDirectoryName(Path.GetFullPath(sintPath)) ?? ".";
+        string sintBase = Path.GetFileNameWithoutExtension(sintPath);
+        string sintExt = Path.GetExtension(sintPath);
+        if (string.IsNullOrWhiteSpace(sintExt)) sintExt = ".txt";
+        string defaultOut = sintBase.EndsWith("_ATUALIZADO", StringComparison.OrdinalIgnoreCase)
+            ? Path.GetFullPath(sintPath)
+            : Path.Combine(sintDir, $"{sintBase}_ATUALIZADO{sintExt}");
+        string outPath = GetOption(args, "-o") ?? defaultOut;
+
+        byte[] sintBytes = File.ReadAllBytes(sintPath);
+        var doc = SintegraParser.ParseBytes(sintBytes);
+        string buyerUf = doc.Reg10?.Uf.Trim() ?? "MG";
+        var xmls = FiscalCrossAuditor.LoadXmlsFromPath(xmlPath);
+        var candidates = FiscalCrossAuditor.BuildPurchaseProcessCandidates(doc, xmls, month);
+        if (onlyMissing)
+            candidates = candidates.Where(c => !c.AlreadyInSintegra).ToList();
+
+        var requests = candidates.Select(c => new XmlInjectionRequest(
+            c.Xml,
+            !string.IsNullOrWhiteSpace(cfopOpt)
+                ? cfopOpt
+                : (c.ExistingSintegraCfop ?? SintegraXmlInjector.SuggestEntryCfop(c.Xml.Cfops.FirstOrDefault(), c.Xml.FullData?.SupplierUf, buyerUf)),
+            parsedEntryDate ?? c.ExistingSintegraDateYmd ?? c.Xml.DataEmissao
+        )).ToList();
+
+        var res = onlyMissing
+            ? SintegraXmlInjector.InjectXmlInvoices(sintBytes, requests, simplesNacionalZeroIcms: true, includeReg54Items: true)
+            : SintegraXmlInjector.ReprocessXmlInvoices(sintBytes, requests, simplesNacionalZeroIcms: true, includeReg54Items: true);
+
+        File.WriteAllBytes(outPath, res.UpdatedBytes);
+        Console.WriteLine($"Sintegra salvo em: {outPath}");
+        Console.WriteLine($"Notas incluídas: {res.InjectedInvoicesCount} | Atualizadas: {res.UpdatedExistingCount} | Erros após validação: {res.AfterReport.Summary.ErrorCount}");
+
+        if (!string.IsNullOrWhiteSpace(copyXmlDir))
+        {
+            var copyRes = SintegraXmlInjector.ExportAdjustedXmlCopies(new[] { xmlPath }, copyXmlDir, requests);
+            Console.WriteLine($"Cópias XML ({copyRes.ExportedCount} arquivo(s)) salvas em: {copyRes.OutputDirectory}");
+        }
         return 0;
     }
 

@@ -333,6 +333,24 @@ public static class TaxIdValidator
         return s;
     }
 
+    /// <summary>
+    /// Parses DD/MM/YYYY, YYYY-MM-DD or YYYYMMDD into validated YYYYMMDD, or null if invalid.
+    /// </summary>
+    public static string? ParseFlexibleDateYyyyMmDd(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return null;
+        string s = input.Trim();
+        string ymd;
+        if (s.Length == 10 && s[2] == '/' && s[5] == '/')
+            ymd = $"{s[6..10]}{s[3..5]}{s[0..2]}";
+        else if (s.Length == 10 && s[4] == '-' && s[7] == '-')
+            ymd = $"{s[0..4]}{s[5..7]}{s[8..10]}";
+        else
+            ymd = s.Replace("/", "").Replace("-", "");
+
+        return ValidateDateYyyyMmDd(ymd) ? ymd : null;
+    }
+
     public static string FormatCentsBrl(long cents)
     {
         decimal val = cents / 100.0m;

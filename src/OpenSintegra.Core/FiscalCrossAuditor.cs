@@ -62,7 +62,8 @@ public sealed record XmlDocumentSummary(
     long ValorIcmsCents,
     IReadOnlyList<string> Cfops,
     IReadOnlyList<string> RefNFeKeys,
-    XmlFullData? FullData = null
+    XmlFullData? FullData = null,
+    string DataSaiEnt = ""
 );
 
 public sealed record AuditFinding(
@@ -123,6 +124,14 @@ public sealed record CfopComparisonRow(
     long SintegraIcmsCents,
     long ExternalIcmsCents,
     long DiffIcmsCents
+);
+
+public sealed record XmlPurchaseProcessCandidate(
+    XmlDocumentSummary Xml,
+    bool AlreadyInSintegra,
+    string? ExistingSintegraDateYmd = null,
+    string? ExistingSintegraCfop = null,
+    bool HasMultipleCfopsInSintegra = false
 );
 
 public sealed record AuditReport(
@@ -248,6 +257,12 @@ public static class FiscalCrossAuditor
                 string dataEmi = dhEmi.Replace("-", "");
                 if (dataEmi.Length > 8) dataEmi = dataEmi[..8];
 
+                string dhSaiEnt = ChildText(ide, "dhSaiEnt");
+                if (string.IsNullOrEmpty(dhSaiEnt)) dhSaiEnt = ChildText(ide, "dSaiEnt");
+                string dataSaiEnt = dhSaiEnt.Replace("-", "");
+                if (dataSaiEnt.Length > 8) dataSaiEnt = dataSaiEnt[..8];
+                if (!TaxIdValidator.ValidateDateYyyyMmDd(dataSaiEnt)) dataSaiEnt = "";
+
                 string emitCnpj = ChildText(emit, "CNPJ");
                 if (string.IsNullOrEmpty(emitCnpj)) emitCnpj = ChildText(emit, "CPF");
                 string emitNome = ChildText(emit, "xNome");
@@ -335,7 +350,7 @@ public static class FiscalCrossAuditor
                 return new XmlDocumentSummary(
                     fileName, modelo == "65" ? "NFCe" : "NFe", chave,
                     modelo, serie, numero, dataEmi, emitCnpj, emitNome, destCnpj,
-                    tpNf, finNfe, natOp, cancelled, vNf, vBc, vIcms, cfops, refs, fullData);
+                    tpNf, finNfe, natOp, cancelled, vNf, vBc, vIcms, cfops, refs, fullData, dataSaiEnt);
             }
 
             var infCte = Desc(root, "infCte");
@@ -382,6 +397,26 @@ public static class FiscalCrossAuditor
         }
     }
 
+    /// <summary>
+    /// Excludes generated working-copy output folders (XMLs_Ajustados) from recursive scans
+    /// so original XMLs are never double-counted after exporting adjusted copies.
+    /// </summary>
+    public static bool IsInsideAdjustedCopiesFolder(string filePath, string rootPath)
+    {
+        try
+        {
+            string rel = Path.GetRelativePath(rootPath, Path.GetDirectoryName(filePath) ?? rootPath);
+            if (rel == ".") return false;
+            foreach (string part in rel.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (part.EndsWith("XMLs_Ajustados", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
     public static List<XmlDocumentSummary> LoadXmlsFromPath(
         string path,
         IProgress<(int Percent, string Status)>? progress = null,
@@ -391,8 +426,9 @@ public static class FiscalCrossAuditor
         if (Directory.Exists(path))
         {
             var files = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
-                .Where(f => f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) ||
-                            f.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                .Where(f => !IsInsideAdjustedCopiesFolder(f, path) &&
+                            (f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) ||
+                             f.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)))
                 .ToList();
 
             int total = Math.Max(1, files.Count);
@@ -433,6 +469,22 @@ public static class FiscalCrossAuditor
             string xml = File.ReadAllText(path);
             if (ParseFiscalXml(Path.GetFileName(path), xml) is { } parsed)
                 list.Add(parsed);
+        }
+        return list;
+    }
+
+    public static List<XmlDocumentSummary> LoadXmlsFromPaths(
+        IReadOnlyList<string> paths,
+        IProgress<(int Percent, string Status)>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var list = new List<XmlDocumentSummary>();
+        int total = Math.Max(1, paths.Count);
+        for (int i = 0; i < paths.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(((i + 1) * 100 / total, $"Processando arquivo: {Path.GetFileName(paths[i])}"));
+            list.AddRange(LoadXmlsFromPath(paths[i], null, cancellationToken));
         }
         return list;
     }
@@ -480,7 +532,7 @@ public static class FiscalCrossAuditor
         return data;
     }
 
-    private static XmlOperationCategory ClassifyXml(XmlDocumentSummary x, string estabCnpj)
+    public static XmlOperationCategory ClassifyXml(XmlDocumentSummary x, string estabCnpj)
     {
         if (x.DocKind == "EventoCancelamento") return XmlOperationCategory.EventoCancelamento;
         if (x.DocKind == "NFCe") return XmlOperationCategory.NfceConsumidor;
@@ -516,6 +568,104 @@ public static class FiscalCrossAuditor
         _ => "Evento"
     };
 
+    private static void BuildReg50Indexes(
+        SintegraDocument sintegra,
+        out Dictionary<string, List<Reg50>> byFullKey,
+        out Dictionary<string, List<Reg50>> byCnpjNum,
+        out Dictionary<string, List<Reg50>> byDocKey)
+    {
+        byFullKey = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
+        byCnpjNum = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
+        byDocKey = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
+
+        static void AddMap(Dictionary<string, List<Reg50>> map, string k, Reg50 row)
+        {
+            if (!map.TryGetValue(k, out var l))
+            {
+                l = new List<Reg50>();
+                map[k] = l;
+            }
+            l.Add(row);
+        }
+
+        foreach (var r50 in sintegra.Reg50)
+        {
+            string mod = r50.Modelo.Trim();
+            string ser = NormalizeSerie(r50.Serie);
+            long num = NormalizeDocNum(r50.Numero);
+            string cnpjTrim = r50.Cnpj.Trim();
+            string fullKey = $"{cnpjTrim}|{mod}|{ser}|{num}";
+            string cnpjNumKey = $"{cnpjTrim}|{num}";
+            string docKey = $"{mod}|{ser}|{num}";
+
+            AddMap(byFullKey, fullKey, r50);
+            if (!string.IsNullOrEmpty(cnpjTrim))
+                AddMap(byCnpjNum, cnpjNumKey, r50);
+            AddMap(byDocKey, docKey, r50);
+        }
+    }
+
+    public static List<XmlPurchaseProcessCandidate> BuildPurchaseProcessCandidates(
+        SintegraDocument sintegra,
+        IReadOnlyList<XmlDocumentSummary> xmlDocs,
+        string? yearMonthFilter = null)
+    {
+        string estabCnpj = sintegra.Reg10?.Cnpj.Trim() ?? "";
+        BuildReg50Indexes(sintegra, out var byFullKey, out var byCnpjNum, out _);
+
+        var cancelledDocKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var x in xmlDocs)
+        {
+            if (x.DocKind == "EventoCancelamento")
+                cancelledDocKeys.Add($"{x.EmitCnpj.Trim()}|{x.Modelo.Trim()}|{NormalizeSerie(x.Serie)}|{NormalizeDocNum(x.Numero)}");
+        }
+
+        bool hasFilter = !string.IsNullOrWhiteSpace(yearMonthFilter) && yearMonthFilter != "ALL";
+        var candidates = new List<XmlPurchaseProcessCandidate>();
+        var seenKeys = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var x in xmlDocs)
+        {
+            if (x.DocKind != "NFe") continue;
+            if (ClassifyXml(x, estabCnpj) != XmlOperationCategory.CompraComercial) continue;
+
+            string mod = x.Modelo.Trim();
+            string ser = NormalizeSerie(x.Serie);
+            long num = NormalizeDocNum(x.Numero);
+            string fullKey = $"{x.EmitCnpj.Trim()}|{mod}|{ser}|{num}";
+            if (x.Cancelled || cancelledDocKeys.Contains(fullKey)) continue;
+            if (!seenKeys.Add(fullKey)) continue;
+
+            List<Reg50>? existing = null;
+            if (!byFullKey.TryGetValue(fullKey, out existing) && !string.IsNullOrEmpty(x.EmitCnpj.Trim()))
+                byCnpjNum.TryGetValue($"{x.EmitCnpj.Trim()}|{num}", out existing);
+
+            string xmlYm = x.DataEmissao.Length >= 6 ? x.DataEmissao[..6] : "";
+            string? sintDate = existing is { Count: > 0 } ? existing[0].DataEmissao : null;
+            string sintYm = sintDate is { Length: >= 6 } ? sintDate[..6] : "";
+
+            if (hasFilter && xmlYm != yearMonthFilter && sintYm != yearMonthFilter)
+                continue;
+
+            var distinctCfops = existing is { Count: > 0 }
+                ? existing.Select(r => r.Cfop.Trim()).Distinct(StringComparer.Ordinal).ToList()
+                : new List<string>();
+
+            candidates.Add(new XmlPurchaseProcessCandidate(
+                x,
+                AlreadyInSintegra: existing is { Count: > 0 },
+                ExistingSintegraDateYmd: sintDate,
+                ExistingSintegraCfop: distinctCfops.Count == 1 ? distinctCfops[0] : null,
+                HasMultipleCfopsInSintegra: distinctCfops.Count > 1));
+        }
+
+        return candidates
+            .OrderBy(c => c.AlreadyInSintegra ? 1 : 0)
+            .ThenBy(c => c.Xml.DataEmissao, StringComparer.Ordinal)
+            .ThenBy(c => c.Xml.Numero, StringComparer.Ordinal)
+            .ToList();
+    }
+
     public static AuditReport RunCrossAudit(
         SintegraDocument sintegra,
         IReadOnlyList<XmlDocumentSummary> xmlDocs,
@@ -530,38 +680,7 @@ public static class FiscalCrossAuditor
         int xmlComprasTotal = 0, xmlComprasLancadas = 0, xmlComprasOmissas = 0, xmlOutrasOmissas = 0;
         long xmlComprasOmissasCents = 0;
 
-        // Index Reg 50 across ALL months by:
-        // 1) exact (Cnpj + Mod + Serie + NumMod1M)
-        // 2) (Cnpj + NumMod1M) when Modelo/Serie was typed slightly differently in the ERP
-        // 3) fallback (Mod + Serie + NumMod1M) when XML issuer CNPJ is absent
-        var sint50ByFullKey = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
-        var sint50ByCnpjNum = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
-        var sint50ByDocKey = new Dictionary<string, List<Reg50>>(StringComparer.Ordinal);
-        foreach (var r50 in sintegra.Reg50)
-        {
-            string mod = r50.Modelo.Trim();
-            string ser = NormalizeSerie(r50.Serie);
-            long num = NormalizeDocNum(r50.Numero);
-            string cnpjTrim = r50.Cnpj.Trim();
-            string fullKey = $"{cnpjTrim}|{mod}|{ser}|{num}";
-            string cnpjNumKey = $"{cnpjTrim}|{num}";
-            string docKey = $"{mod}|{ser}|{num}";
-
-            static void AddMap(Dictionary<string, List<Reg50>> map, string k, Reg50 row)
-            {
-                if (!map.TryGetValue(k, out var l))
-                {
-                    l = new List<Reg50>();
-                    map[k] = l;
-                }
-                l.Add(row);
-            }
-
-            AddMap(sint50ByFullKey, fullKey, r50);
-            if (!string.IsNullOrEmpty(cnpjTrim))
-                AddMap(sint50ByCnpjNum, cnpjNumKey, r50);
-            AddMap(sint50ByDocKey, docKey, r50);
-        }
+        BuildReg50Indexes(sintegra, out var sint50ByFullKey, out var sint50ByCnpjNum, out var sint50ByDocKey);
 
         var sint70ByDocKey = new Dictionary<string, List<Reg70>>(StringComparer.Ordinal);
         foreach (var r70 in sintegra.Reg70)
