@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -58,6 +59,7 @@ public sealed class ReportPreviewWindow : Window
         root.Children.Add(scroll);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, null);
     }
 
     private Control BuildToolbar()
@@ -98,6 +100,8 @@ public sealed class ReportPreviewWindow : Window
         };
 
         var cmbMode = new ComboBox { Width = 290, FontSize = 12 };
+        AutomationProperties.SetName(cmbMode, "Modo do Relatório");
+        ToolTip.SetTip(cmbMode, "Alternar entre Relatório Completo, Não Lançadas e Mais Vendidos");
         cmbMode.Items.Add(new ComboBoxItem { Content = "Relatório Completo (Entradas x Saídas + Faltantes)", Tag = ReportMode.Completo });
         cmbMode.Items.Add(new ComboBoxItem { Content = "Somente Notas Não Lançadas (Para Cliente)", Tag = ReportMode.SomenteNotasNaoLancadas });
         cmbMode.Items.Add(new ComboBoxItem { Content = "Produtos Mais Vendidos", Tag = ReportMode.ProdutosMaisVendidos });
@@ -124,6 +128,8 @@ public sealed class ReportPreviewWindow : Window
             SelectedIndex = 1,
             FontSize = 12
         };
+        AutomationProperties.SetName(cmbZoom, "Zoom da página");
+        ToolTip.SetTip(cmbZoom, "Ajustar nível de zoom da folha A4");
         cmbZoom.SelectionChanged += (_, _) =>
         {
             string? sel = cmbZoom.SelectedItem as string;
@@ -161,7 +167,18 @@ public sealed class ReportPreviewWindow : Window
 
     private static Button CreateToolbarButton(string label, string iconPath, string iconColor)
     {
-        return new Button
+        var row = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Children =
+            {
+                VectorIcons.Create(iconPath, iconColor, 15),
+                new TextBlock { Text = label, FontSize = 12, FontWeight = FontWeight.Medium, VerticalAlignment = VerticalAlignment.Center }
+            }
+        };
+        AutomationProperties.SetAccessibilityView(row, AccessibilityView.Raw);
+        var btn = new Button
         {
             Background = Brushes.White,
             BorderBrush = Brush.Parse("#CBD5E1"),
@@ -169,17 +186,11 @@ public sealed class ReportPreviewWindow : Window
             Foreground = Brush.Parse("#0F172A"),
             Padding = new Thickness(12, 6),
             CornerRadius = new CornerRadius(5),
-            Content = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                Children =
-                {
-                    VectorIcons.Create(iconPath, iconColor, 15),
-                    new TextBlock { Text = label, FontSize = 12, FontWeight = FontWeight.Medium, VerticalAlignment = VerticalAlignment.Center }
-                }
-            }
+            Content = row
         };
+        AutomationProperties.SetName(btn, label);
+        ToolTip.SetTip(btn, label);
+        return btn;
     }
 
     private Control BuildPaperSheet()

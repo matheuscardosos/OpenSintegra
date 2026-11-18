@@ -152,6 +152,7 @@ public sealed class LineInspectorWindow : Window
         root.Children.Add(bottomPanel);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, btnClose);
     }
 
     private static TextBlock CreateCell(string text, bool bold, int col, bool mono = false)
@@ -165,6 +166,8 @@ public sealed class LineInspectorWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
+        if (!string.IsNullOrWhiteSpace(text))
+            ToolTip.SetTip(tb, text);
         if (mono)
             tb.FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace");
         Grid.SetColumn(tb, col);

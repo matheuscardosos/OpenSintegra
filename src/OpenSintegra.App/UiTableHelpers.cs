@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
@@ -111,7 +112,9 @@ internal static class UiTableHelpers
         {
             listBox.KeyDown += (_, e) =>
             {
-                if (e.Key is Key.Enter or Key.Return && listBox.SelectedItem is T selected)
+                bool activateKey = e.Key is Key.Enter or Key.Return ||
+                                   (e.Key == Key.Space && e.Source is not Button);
+                if (activateKey && listBox.SelectedItem is T selected)
                 {
                     e.Handled = true;
                     onActivateRow(selected);
@@ -120,6 +123,23 @@ internal static class UiTableHelpers
         }
 
         return listBox;
+    }
+
+    internal static void ConfigureModalShortcuts(Window dlg, Control? initialFocus = null, Action? onEscape = null)
+    {
+        dlg.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                if (onEscape is not null)
+                    onEscape();
+                else
+                    dlg.Close();
+            }
+        };
+        if (initialFocus is not null)
+            dlg.Opened += (_, _) => initialFocus.Focus();
     }
 
     private static bool IsDescendantOfButton(Control? src, Control stopAt)

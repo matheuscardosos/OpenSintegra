@@ -111,14 +111,17 @@ public sealed class XmlInvoiceDetailsWindow : Window
         {
             var sp = new StackPanel { Margin = new Thickness(0, 3, 12, 3) };
             sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#475569") });
-            sp.Children.Add(new TextBlock
+            var vTb = new TextBlock
             {
                 Text = v,
                 FontSize = 12,
                 FontWeight = FontWeight.SemiBold,
                 Foreground = Brush.Parse(color ?? "#0F172A"),
                 TextTrimming = TextTrimming.CharacterEllipsis
-            });
+            };
+            if (!string.IsNullOrWhiteSpace(v))
+                ToolTip.SetTip(vTb, v);
+            sp.Children.Add(vTb);
             Grid.SetColumn(sp, col);
             Grid.SetRow(sp, row);
             infoGrid.Children.Add(sp);
@@ -182,6 +185,8 @@ public sealed class XmlInvoiceDetailsWindow : Window
                 MaxWidth = 220,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
+            if (!string.IsNullOrWhiteSpace(xml.FileName))
+                ToolTip.SetTip(lblFile, xml.FileName);
             Grid.SetColumn(lblFile, 2);
             keyGrid.Children.Add(lblFile);
             hStack.Children.Add(keyGrid);
@@ -363,5 +368,6 @@ public sealed class XmlInvoiceDetailsWindow : Window
         root.Children.Add(foot);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, btnClose);
     }
 }

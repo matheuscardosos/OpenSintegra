@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
@@ -108,6 +109,8 @@ public sealed class MainWindow : Window
 
         BuildShellLayout();
         SetEmptyWelcomeState();
+        ConfigureKeyboardShortcuts();
+        ConfigureDragAndDrop();
 
         SizeChanged += (_, e) =>
         {
@@ -137,6 +140,195 @@ public sealed class MainWindow : Window
                     await LoadXmlOrZipAsync(xmlToLoad);
             }
         };
+    }
+
+    private void ConfigureKeyboardShortcuts()
+    {
+        var sections = Enum.GetValues<NavSection>();
+
+        // Tunnel captures global window/navigation shortcuts before inner controls (ScrollViewer, ListBox, NumericUpDown) consume Tab or keys
+        AddHandler(KeyDownEvent, async (_, e) =>
+        {
+            if (e.Handled) return;
+
+            bool hasCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0 &&
+                           (e.KeyModifiers & KeyModifiers.Alt) == 0;
+            bool hasShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+            if (hasCtrl && e.Key == Key.Tab)
+            {
+                int curIdx = Array.IndexOf(sections, _activeSection);
+                int nextIdx = hasShift
+                    ? (curIdx <= 0 ? sections.Length - 1 : curIdx - 1)
+                    : (curIdx + 1) % sections.Length;
+                NavigateTo(sections[nextIdx]);
+                if (_navButtons.TryGetValue(sections[nextIdx], out var activeNavBtn))
+                    activeNavBtn.Focus();
+                e.Handled = true;
+                return;
+            }
+
+            if (hasCtrl && !hasShift)
+            {
+                int? sectionIndex = e.Key switch
+                {
+                    Key.D1 or Key.NumPad1 => 0,
+                    Key.D2 or Key.NumPad2 => 1,
+                    Key.D3 or Key.NumPad3 => 2,
+                    Key.D4 or Key.NumPad4 => 3,
+                    Key.D5 or Key.NumPad5 => 4,
+                    Key.D6 or Key.NumPad6 => 5,
+                    _ => null
+                };
+                if (sectionIndex is { } idx && idx < sections.Length)
+                {
+                    NavigateTo(sections[idx]);
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            if (hasCtrl && !hasShift && e.Key == Key.O)
+            {
+                e.Handled = true;
+                await PickAndOpenSintegraAsync();
+            }
+            else if (hasCtrl && hasShift && e.Key == Key.O)
+            {
+                e.Handled = true;
+                await PickAndOpenXmlAsync();
+            }
+            else if (hasCtrl && !hasShift && e.Key == Key.S && _hasDocument)
+            {
+                e.Handled = true;
+                await SaveCurrentBytesDialogAsync();
+            }
+            else if (hasCtrl && !hasShift && e.Key == Key.P && _hasDocument)
+            {
+                e.Handled = true;
+                OpenReportPreview(ReportMode.Completo);
+            }
+            else if (e.Key == Key.F5 && e.KeyModifiers == KeyModifiers.None)
+            {
+                e.Handled = true;
+                await ReloadAndReprocessLastXmlAsync();
+            }
+            else if (e.Key == Key.F1 && e.KeyModifiers == KeyModifiers.None)
+            {
+                e.Handled = true;
+                await ShowInfoDialogAsync(
+                    "Atalhos de Teclado e Ajuda",
+                    "Atalhos disponíveis no OpenSintegra:\n\n" +
+                    "  Ctrl+O           Abrir arquivo Sintegra (.txt)\n" +
+                    "  Ctrl+Shift+O     Carregar XMLs ou pacote ZIP\n" +
+                    "  Ctrl+S           Salvar Sintegra atualizado (.txt)\n" +
+                    "  Ctrl+P           Visualizar relatório completo\n" +
+                    "  F5               Reprocessar último pacote/pasta de XMLs\n" +
+                    "  Ctrl+Tab         Avançar entre seções do painel lateral\n" +
+                    "  Ctrl+Shift+Tab   Voltar entre seções do painel lateral\n" +
+                    "  Ctrl+1 a Ctrl+6  Ir direto para a seção desejada\n" +
+                    "  Esc / Enter      Fechar ou confirmar janelas auxiliares\n\n" +
+                    "Você também pode arrastar e soltar arquivos Sintegra (.txt), SPED (.txt), pacotes ZIP ou pastas de XML diretamente nesta janela.");
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+    }
+
+    private void ConfigureDragAndDrop()
+    {
+        DragDrop.SetAllowDrop(this, true);
+
+        AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        {
+            e.DragEffects = e.Data.Contains(DataFormats.Files)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+            e.Handled = true;
+        });
+
+        AddHandler(DragDrop.DropEvent, (_, e) =>
+        {
+            if (!e.Data.Contains(DataFormats.Files)) return;
+            var paths = e.Data.GetFiles()?
+                .Select(f => f.TryGetLocalPath())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Cast<string>()
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (paths is { Count: > 0 })
+            {
+                e.Handled = true;
+                _ = HandleDroppedPathsAsync(paths);
+            }
+        });
+    }
+
+    private async Task HandleDroppedPathsAsync(IReadOnlyList<string> paths)
+    {
+        string? sintegraPath = null;
+        string? spedPath = null;
+        var xmlSources = new List<string>();
+
+        foreach (string p in paths)
+        {
+            if (Directory.Exists(p))
+            {
+                xmlSources.Add(p);
+                continue;
+            }
+            if (!File.Exists(p)) continue;
+
+            string ext = Path.GetExtension(p).ToLowerInvariant();
+            if (ext is ".xml" or ".zip")
+            {
+                xmlSources.Add(p);
+            }
+            else if (ext == ".txt")
+            {
+                if (IsSpedFiscalFile(p))
+                    spedPath ??= p;
+                else
+                    sintegraPath ??= p;
+            }
+        }
+
+        if (sintegraPath is null && spedPath is null && xmlSources.Count == 0)
+        {
+            await ShowInfoDialogAsync(
+                "Formato não suportado",
+                "Solte um arquivo Sintegra (.txt), SPED Fiscal (.txt), notas XML (.xml), pacote (.zip) ou uma pasta contendo os XMLs.");
+            return;
+        }
+
+        if (sintegraPath is not null)
+            await LoadSintegraFileAsync(sintegraPath);
+
+        if (xmlSources.Count > 0)
+        {
+            string first = xmlSources[0];
+            string label = xmlSources.Count > 1
+                ? $"{xmlSources.Count} item(ns) XML"
+                : (Directory.Exists(first) ? $"Pasta: {Path.GetFileName(first.TrimEnd('\\', '/'))}" : Path.GetFileName(first));
+            string? dbPath = xmlSources.Count == 1 ? first : Path.GetDirectoryName(first);
+            await LoadXmlSourcesAsync(xmlSources, label, dbPath);
+        }
+
+        if (spedPath is not null)
+            await LoadSpedFileAsync(spedPath);
+    }
+
+    private static bool IsSpedFiscalFile(string path)
+    {
+        try
+        {
+            foreach (string line in File.ReadLines(path).Take(5))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                return line.StartsWith("|0000|", StringComparison.Ordinal);
+            }
+        }
+        catch { }
+        return false;
     }
 
     private void BuildShellLayout()
@@ -198,16 +390,16 @@ public sealed class MainWindow : Window
 
         var menu = new Menu { Background = Brushes.Transparent, FontSize = 12.5 };
 
-        var mArquivo = new MenuItem { Header = "Arquivo" };
-        var miAbrir = new MenuItem { Header = "Abrir Sintegra (.txt)..." };
+        var mArquivo = new MenuItem { Header = "_Arquivo" };
+        var miAbrir = new MenuItem { Header = "Abrir Sintegra (.txt)...", InputGesture = KeyGesture.Parse("Ctrl+O") };
         miAbrir.Click += async (_, _) => await PickAndOpenSintegraAsync();
-        var miAbrirXml = new MenuItem { Header = "Carregar XML / ZIP de Compras..." };
+        var miAbrirXml = new MenuItem { Header = "Carregar XML / ZIP de Compras...", InputGesture = KeyGesture.Parse("Ctrl+Shift+O") };
         miAbrirXml.Click += async (_, _) => await PickAndOpenXmlAsync();
         var miAbrirXmlFolder = new MenuItem { Header = "Carregar Pasta de XMLs (inclui subpastas)..." };
         miAbrirXmlFolder.Click += async (_, _) => await PickAndOpenXmlFolderAsync();
         var miAbrirSped = new MenuItem { Header = "Carregar SPED Fiscal (.txt)..." };
         miAbrirSped.Click += async (_, _) => await PickAndOpenSpedAsync();
-        var miSalvar = new MenuItem { Header = "Salvar Sintegra (.txt)..." };
+        var miSalvar = new MenuItem { Header = "Salvar Sintegra (.txt)...", InputGesture = KeyGesture.Parse("Ctrl+S") };
         miSalvar.Click += async (_, _) => await SaveCurrentBytesDialogAsync();
         var miDividir = new MenuItem { Header = "Dividir Sintegra Anual por Mês..." };
         miDividir.Click += async (_, _) => await ExportMonthlySplitsDialogAsync();
@@ -223,10 +415,10 @@ public sealed class MainWindow : Window
         mArquivo.Items.Add(new Separator());
         mArquivo.Items.Add(miSair);
 
-        var mFiscal = new MenuItem { Header = "Fiscal" };
+        var mFiscal = new MenuItem { Header = "_Fiscal" };
         var miLancar = new MenuItem { Header = "Lançar Notas Faltantes no Sintegra..." };
         miLancar.Click += async (_, _) => await OpenInjectMissingDialogAsync(null);
-        var miReproc = new MenuItem { Header = "Reprocessar XMLs (Datas de Entrada / Faltantes)..." };
+        var miReproc = new MenuItem { Header = "Reprocessar XMLs (Datas de Entrada / Faltantes)...", InputGesture = KeyGesture.Parse("F5") };
         miReproc.Click += async (_, _) => await ReloadAndReprocessLastXmlAsync();
         var miAutoFix = new MenuItem { Header = "Corrigir Erros Estruturais (Auto-Fix)" };
         miAutoFix.Click += async (_, _) => await RunQuickFixAndRefreshAsync();
@@ -237,8 +429,8 @@ public sealed class MainWindow : Window
         mFiscal.Items.Add(miAutoFix);
         mFiscal.Items.Add(miCfop);
 
-        var mRel = new MenuItem { Header = "Relatórios" };
-        var miPrevComp = new MenuItem { Header = "Visualizar Relatório Completo (Entradas x Saídas)..." };
+        var mRel = new MenuItem { Header = "_Relatórios" };
+        var miPrevComp = new MenuItem { Header = "Visualizar Relatório Completo (Entradas x Saídas)...", InputGesture = KeyGesture.Parse("Ctrl+P") };
         miPrevComp.Click += (_, _) => OpenReportPreview(ReportMode.Completo);
         var miPrevMiss = new MenuItem { Header = "Relatório de Notas Não Lançadas (Para Cliente)..." };
         miPrevMiss.Click += (_, _) => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas);
@@ -255,7 +447,7 @@ public sealed class MainWindow : Window
         mRel.Items.Add(miPdf);
         mRel.Items.Add(miXlsx);
 
-        var mAjuda = new MenuItem { Header = "Ajuda" };
+        var mAjuda = new MenuItem { Header = "A_juda" };
         var miDemo = new MenuItem { Header = "Carregar Dados de Exemplo (Teste)" };
         miDemo.Click += (_, _) => LoadDemoExample();
         var miConfig = new MenuItem { Header = "Configurações e Limite SQLite" };
@@ -291,19 +483,19 @@ public sealed class MainWindow : Window
 
         var strip = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
 
-        strip.Children.Add(CreateRibbonButton("Abrir", "Sintegra", VectorIcons.FolderOpen, "#2563EB", async () => await PickAndOpenSintegraAsync()));
+        strip.Children.Add(CreateRibbonButton("Abrir", "Sintegra", VectorIcons.FolderOpen, "#2563EB", async () => await PickAndOpenSintegraAsync(), "Abrir arquivo Sintegra (.txt) (Ctrl+O)"));
 
-        var btnXmlRibbon = CreateRibbonButton("Carregar", "XML / Pasta", VectorIcons.UploadZip, "#0369A1", null);
+        var btnXmlRibbon = CreateRibbonButton("Carregar", "XML / Pasta", VectorIcons.UploadZip, "#0369A1", null, "Carregar XML, pacote ZIP ou pasta inteira (Ctrl+Shift+O / F5)");
         var xmlFlyout = BuildXmlActionsFlyout();
         btnXmlRibbon.Click += (_, _) => xmlFlyout.ShowAt(btnXmlRibbon);
         strip.Children.Add(btnXmlRibbon);
 
         strip.Children.Add(CreateToolbarDivider());
-        strip.Children.Add(CreateRibbonButton("Lançar", "Faltantes", VectorIcons.CheckBadge, "#15803D", async () => await OpenInjectMissingDialogAsync(null)));
-        strip.Children.Add(CreateRibbonButton("Corrigir", "Sintegra", VectorIcons.Wrench, "#B45309", async () => await RunQuickFixAndRefreshAsync()));
+        strip.Children.Add(CreateRibbonButton("Lançar", "Faltantes", VectorIcons.CheckBadge, "#15803D", async () => await OpenInjectMissingDialogAsync(null), "Lançar notas de compra XML faltantes no Sintegra"));
+        strip.Children.Add(CreateRibbonButton("Corrigir", "Sintegra", VectorIcons.Wrench, "#B45309", async () => await RunQuickFixAndRefreshAsync(), "Executar correção automática (Auto-Fix) no arquivo"));
         strip.Children.Add(CreateToolbarDivider());
 
-        var btnRel = CreateRibbonButton("Relatórios", "PDF / Excel", VectorIcons.DocumentText, "#2563EB", null);
+        var btnRel = CreateRibbonButton("Relatórios", "PDF / Excel", VectorIcons.DocumentText, "#2563EB", null, "Visualizar ou exportar relatórios PDF e Excel (Ctrl+P)");
         var relFlyout = new MenuFlyout();
         var fComp = new MenuItem { Header = "Visualizar Relatório Completo (Entradas x Saídas)..." };
         fComp.Click += (_, _) => OpenReportPreview(ReportMode.Completo);
@@ -324,14 +516,15 @@ public sealed class MainWindow : Window
         btnRel.Click += (_, _) => relFlyout.ShowAt(btnRel);
         strip.Children.Add(btnRel);
 
-        strip.Children.Add(CreateRibbonButton("Empresas", "e Banco", VectorIcons.SettingsGear, "#475569", () => NavigateTo(NavSection.EmpresasEBanco)));
+        strip.Children.Add(CreateRibbonButton("Empresas", "e Banco", VectorIcons.SettingsGear, "#475569", () => NavigateTo(NavSection.EmpresasEBanco), "Configurações de regime, histórico e banco SQLite"));
 
         bar.Child = strip;
         return bar;
     }
 
-    private static Button CreateRibbonButton(string line1, string line2, string iconPath, string iconHex, Action? onClick)
+    private static Button CreateRibbonButton(string line1, string line2, string iconPath, string iconHex, Action? onClick, string? tooltip = null)
     {
+        string accessibleName = $"{line1} {line2}";
         var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Spacing = 3 };
         stack.Children.Add(VectorIcons.Create(iconPath, iconHex, 20));
         stack.Children.Add(new TextBlock
@@ -342,12 +535,16 @@ public sealed class MainWindow : Window
             TextAlignment = TextAlignment.Center,
             LineHeight = 13.5
         });
+        AutomationProperties.SetAccessibilityView(stack, AccessibilityView.Raw);
 
         var btn = new Button
         {
             Content = stack
         };
         btn.Classes.Add("ribbon");
+        AutomationProperties.SetName(btn, accessibleName);
+        if (!string.IsNullOrWhiteSpace(tooltip))
+            ToolTip.SetTip(btn, tooltip);
         if (onClick is not null)
             btn.Click += (_, _) => onClick();
         return btn;
@@ -439,11 +636,15 @@ public sealed class MainWindow : Window
             grid.Children.Add(rightBadge);
         }
 
+        AutomationProperties.SetAccessibilityView(grid, AccessibilityView.Raw);
+
         var btn = new Button
         {
             Content = grid
         };
         btn.Classes.Add("nav");
+        AutomationProperties.SetName(btn, label);
+        AutomationProperties.SetAutomationId(btn, $"Nav_{section}");
         if (isPrimary)
             btn.Classes.Add("active");
         btn.Click += (_, _) => NavigateTo(section);
@@ -523,6 +724,9 @@ public sealed class MainWindow : Window
         _cmbPeriod.MinWidth = 185;
         _cmbPeriod.MaxWidth = 240;
         _cmbPeriod.FontSize = 12;
+        AutomationProperties.SetLabeledBy(_cmbPeriod, lblPeriod);
+        AutomationProperties.SetName(_cmbPeriod, "Filtro de Competência");
+        ToolTip.SetTip(_cmbPeriod, "Filtrar o período completo ou uma competência específica");
         _cmbPeriod.SelectionChanged += (_, _) =>
         {
             if (_suppressPeriodEvent) return;
@@ -548,13 +752,17 @@ public sealed class MainWindow : Window
         _btnSalvarAlteracoes.Margin = new Thickness(0, 2, 0, 2);
         _btnSalvarAlteracoes.VerticalAlignment = VerticalAlignment.Center;
         _btnSalvarAlteracoes.IsVisible = false;
-        _btnSalvarAlteracoes.Content = new TextBlock
+        AutomationProperties.SetName(_btnSalvarAlteracoes, "Salvar Sintegra Atualizado");
+        ToolTip.SetTip(_btnSalvarAlteracoes, "Salvar arquivo Sintegra atualizado em disco (Ctrl+S)");
+        var salvarLbl = new TextBlock
         {
             Text = "Salvar Sintegra Atualizado",
             FontSize = 12,
             FontWeight = FontWeight.SemiBold,
             Foreground = Brushes.White
         };
+        AutomationProperties.SetAccessibilityView(salvarLbl, AccessibilityView.Raw);
+        _btnSalvarAlteracoes.Content = salvarLbl;
         _btnSalvarAlteracoes.Click += async (_, _) => await SaveCurrentBytesDialogAsync();
         rightWrap.Children.Add(_btnSalvarAlteracoes);
 
@@ -716,6 +924,8 @@ public sealed class MainWindow : Window
         {
             _hdrCompanyName.Text = "OpenSintegra Contábil";
             _hdrCompanyDocs.Text = "Abra um arquivo Sintegra (.txt) e o ZIP/pasta de XMLs para conferir entradas x saídas.";
+            ToolTip.SetTip(_hdrCompanyName, null);
+            ToolTip.SetTip(_hdrCompanyDocs, null);
             _hdrStatusPill.Background = Brush.Parse("#F1F5F9");
             _hdrStatusText.Foreground = BrushMuted;
             _hdrStatusText.Text = "Aguardando arquivo";
@@ -733,6 +943,8 @@ public sealed class MainWindow : Window
 
             _hdrCompanyName.Text = companyName;
             _hdrCompanyDocs.Text = $"CNPJ: {cnpj}  |  IE: {ie}  |  Regime: {regime}";
+            ToolTip.SetTip(_hdrCompanyName, companyName);
+            ToolTip.SetTip(_hdrCompanyDocs, _hdrCompanyDocs.Text);
 
             int err = _report.Summary.ErrorCount;
             int warn = _report.Summary.WarningCount;
@@ -825,7 +1037,8 @@ public sealed class MainWindow : Window
             Text = "Importe seu arquivo Sintegra (.txt mensal ou anual) e opcionalmente o pacote ZIP/pasta com os XMLs de compras para:\n" +
                    "  - Comparar Entradas x Saídas mês a mês em linguagem simples para o escritório e o cliente;\n" +
                    "  - Descobrir exatamente quais notas fiscais de compra ficaram sem lançamento e em quais meses;\n" +
-                   "  - Lançar as notas XML faltantes diretamente no Sintegra e salvar o arquivo pronto e validado.",
+                   "  - Lançar as notas XML faltantes diretamente no Sintegra e salvar o arquivo pronto e validado.\n\n" +
+                   "Dica: você também pode arrastar e soltar arquivos Sintegra (.txt), SPED (.txt), pacote ZIP ou pasta de XMLs direto nesta janela, ou usar Ctrl+O / Ctrl+Shift+O.",
             FontSize = 13,
             Foreground = BrushTextBody,
             TextWrapping = TextWrapping.Wrap,
@@ -1082,9 +1295,9 @@ public sealed class MainWindow : Window
             var rowGrid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions(cols),
-                Background = i % 2 == 0 ? Brushes.White : Brush.Parse("#F8FAFC"),
                 Cursor = HandCursor
             };
+            AutomationProperties.SetAccessibilityView(rowGrid, AccessibilityView.Raw);
 
             AddBodyCellFast(rowGrid, 0, r.MonthLabel, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
             AddBodyCellFast(rowGrid, 1, $"R$ {TaxIdValidator.FormatCentsBrl(r.ComprasEntradasCents)}", TextAlignment.Right, FontWeight.Normal, BrushTextBody);
@@ -1111,13 +1324,26 @@ public sealed class MainWindow : Window
             AddBodyCellFast(rowGrid, 6, xmlTxt, TextAlignment.Right, FontWeight.SemiBold, xmlBrush);
 
             string ymClicked = r.YearMonth;
-            rowGrid.Tapped += (_, _) => SelectPeriodInCombo(_selectedYearMonth == ymClicked ? "ALL" : ymClicked);
+            bool isSelectedPeriod = _selectedYearMonth == ymClicked;
+            string verb = isSelectedPeriod ? "remover filtro de" : "filtrar por";
+
+            var rowBtn = new Button
+            {
+                Background = i % 2 == 0 ? Brushes.White : Brush.Parse("#F8FAFC"),
+                Content = rowGrid
+            };
+            rowBtn.Classes.Add("table-row");
+            AutomationProperties.SetName(
+                rowBtn,
+                $"{r.MonthLabel}: Compras R$ {TaxIdValidator.FormatCentsBrl(r.ComprasEntradasCents)}, Entradas R$ {TaxIdValidator.FormatCentsBrl(r.TotalEntradasCents)}, Saídas R$ {TaxIdValidator.FormatCentsBrl(r.TotalSaidasCents)}, Saldo {TaxIdValidator.FormatSignedCentsBrl(r.SaldoLiquidoCents)}, XML {xmlTxt}. Pressione para {verb} este mês.");
+            ToolTip.SetTip(rowBtn, $"Clique para {verb} {r.MonthLabel}");
+            rowBtn.Click += (_, _) => SelectPeriodInCombo(_selectedYearMonth == ymClicked ? "ALL" : ymClicked);
 
             stack.Children.Add(new Border
             {
                 BorderBrush = BrushBorderLight,
                 BorderThickness = new Thickness(0, 1, 0, 0),
-                Child = rowGrid
+                Child = rowBtn
             });
         }
 
@@ -1360,6 +1586,8 @@ public sealed class MainWindow : Window
             FontSize = 12,
             Margin = new Thickness(0, 0, 8, 4)
         };
+        AutomationProperties.SetName(txtSearch, "Buscar documentos fiscais por número, CNPJ ou CFOP");
+        ToolTip.SetTip(txtSearch, "Filtrar documentos por número da NF, CNPJ ou CFOP (pressione Enter para aplicar)");
 
         var lblCount = new TextBlock
         {
@@ -1850,8 +2078,12 @@ public sealed class MainWindow : Window
         stack.Children.Add(new TextBlock { Text = $"Espaço em uso: {stats.FormattedSummary}", FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark });
 
         var limitRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
-        limitRow.Children.Add(new TextBlock { Text = "Limite máximo (MB):", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center });
+        var lblLimit = new TextBlock { Text = "Limite máximo (MB):", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center };
+        limitRow.Children.Add(lblLimit);
         var numLimit = new NumericUpDown { Minimum = 16, Maximum = 102400, Increment = 128, Value = stats.MaxLimitMb, Width = 140, FormatString = "N0" };
+        AutomationProperties.SetLabeledBy(numLimit, lblLimit);
+        AutomationProperties.SetName(numLimit, "Limite máximo da base SQLite em MB");
+        ToolTip.SetTip(numLimit, "Tamanho máximo em megabytes antes da limpeza automática do histórico SQLite");
         limitRow.Children.Add(numLimit);
         limitRow.Children.Add(CreateFilterChip("512 MB", stats.MaxLimitMb == 512, () => { numLimit.Value = 512; }));
         limitRow.Children.Add(CreateFilterChip("1 GB", stats.MaxLimitMb == 1024, () => { numLimit.Value = 1024; }));
@@ -1867,8 +2099,12 @@ public sealed class MainWindow : Window
         stack.Children.Add(chkPrune);
 
         var regRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
-        regRow.Children.Add(new TextBlock { Text = "Regime Tributário da empresa:", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center });
+        var lblRegime = new TextBlock { Text = "Regime Tributário da empresa:", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center };
+        regRow.Children.Add(lblRegime);
         var cmbRegime = new ComboBox { Width = 220, FontSize = 12 };
+        AutomationProperties.SetLabeledBy(cmbRegime, lblRegime);
+        AutomationProperties.SetName(cmbRegime, "Regime Tributário da empresa");
+        ToolTip.SetTip(cmbRegime, "Selecione o regime tributário usado nos relatórios gerenciais");
         string currentRegime = _doc.Reg10 is not null ? _db.GetCompanyTaxRegime(_doc.Reg10.Cnpj) : "Simples Nacional";
         foreach (string opt in new[] { "Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI / SIMEI" })
         {
@@ -2240,6 +2476,11 @@ public sealed class MainWindow : Window
         string? path = files[0].TryGetLocalPath();
         if (string.IsNullOrEmpty(path)) return;
 
+        await LoadSpedFileAsync(path);
+    }
+
+    private async Task LoadSpedFileAsync(string path)
+    {
         var dlg = new ImportProgressWindow("Importando SPED Fiscal");
         SpedParsedData? sped = null;
         AuditReport? result = null;
@@ -2267,7 +2508,12 @@ public sealed class MainWindow : Window
         };
 
         await dlg.ShowDialog(this);
-        if (failure is OperationCanceledException || failure is not null) return;
+        if (failure is OperationCanceledException) return;
+        if (failure is not null)
+        {
+            await ShowInfoDialogAsync("Erro na leitura do SPED", failure.Message);
+            return;
+        }
 
         _loadedSped = sped;
         _audit = result;
@@ -2711,8 +2957,10 @@ public sealed class MainWindow : Window
         sp.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = Brush.Parse("#1E293B") });
         var btnOk = CreatePrimaryButton("OK", VectorIcons.CheckBadge, () => dlg.Close());
         btnOk.HorizontalAlignment = HorizontalAlignment.Right;
+        btnOk.IsDefault = true;
         sp.Children.Add(btnOk);
         dlg.Content = sp;
+        UiTableHelpers.ConfigureModalShortcuts(dlg, btnOk);
         await dlg.ShowDialog(this);
     }
 
@@ -2795,13 +3043,16 @@ public sealed class MainWindow : Window
             });
         }
         col.Children.Add(valRow);
-        col.Children.Add(new TextBlock
+        var subTb = new TextBlock
         {
             Text = subText,
             FontSize = 11.5,
             Foreground = BrushMuted,
             TextTrimming = TextTrimming.CharacterEllipsis
-        });
+        };
+        if (!string.IsNullOrWhiteSpace(subText))
+            ToolTip.SetTip(subTb, subText);
+        col.Children.Add(subTb);
 
         Grid.SetColumn(col, 1);
         row.Children.Add(col);
@@ -2889,6 +3140,9 @@ public sealed class MainWindow : Window
         Grid.SetColumn(sp, 1);
         grid.Children.Add(sp);
 
+        AutomationProperties.SetAccessibilityView(grid, AccessibilityView.Raw);
+        AutomationProperties.SetName(btn, $"{title}. {subtitle}");
+        ToolTip.SetTip(btn, title);
         btn.Content = grid;
         btn.Click += (_, _) => onClick();
         return btn;
@@ -2906,12 +3160,14 @@ public sealed class MainWindow : Window
             Foreground = Brush.Parse("#1E293B"),
             VerticalAlignment = VerticalAlignment.Center
         });
+        AutomationProperties.SetAccessibilityView(row, AccessibilityView.Raw);
 
         var btn = new Button
         {
             Content = row
         };
         btn.Classes.Add("quick");
+        AutomationProperties.SetName(btn, label);
         if (onClick is not null)
             btn.Click += (_, _) => onClick();
         return btn;
@@ -2929,12 +3185,14 @@ public sealed class MainWindow : Window
             Foreground = Brushes.White,
             VerticalAlignment = VerticalAlignment.Center
         });
+        AutomationProperties.SetAccessibilityView(row, AccessibilityView.Raw);
 
         var btn = new Button
         {
             Content = row
         };
         btn.Classes.Add("primary");
+        AutomationProperties.SetName(btn, label);
         btn.Click += (_, _) => onClick();
         return btn;
     }
@@ -2998,6 +3256,8 @@ public sealed class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
+        if (!string.IsNullOrWhiteSpace(text))
+            ToolTip.SetTip(tb, text);
         Grid.SetColumn(tb, col);
         g.Children.Add(tb);
     }

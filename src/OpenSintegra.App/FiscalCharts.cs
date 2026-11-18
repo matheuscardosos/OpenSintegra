@@ -1,5 +1,6 @@
 using System.Globalization;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -29,6 +30,11 @@ public sealed class MonthlyBarChartControl : Control
         _rows = rows;
         _highlightedYm = highlightedYm;
         _hoveredIndex = -1;
+        long sumEnt = rows.Sum(r => r.TotalEntradasCents);
+        long sumSai = rows.Sum(r => r.TotalSaidasCents);
+        AutomationProperties.SetName(this,
+            $"Gráfico de evolução mensal: {rows.Count} mês(es), Entradas R$ {TaxIdValidator.FormatCentsBrl(sumEnt)}, Saídas R$ {TaxIdValidator.FormatCentsBrl(sumSai)}");
+        ToolTip.SetTip(this, null);
         InvalidateVisual();
     }
 
@@ -47,6 +53,15 @@ public sealed class MonthlyBarChartControl : Control
         if (idx != _hoveredIndex)
         {
             _hoveredIndex = idx;
+            if (idx >= 0 && idx < _rows.Count)
+            {
+                var r = _rows[idx];
+                ToolTip.SetTip(this, $"{r.MonthLabel}: Entradas R$ {TaxIdValidator.FormatCentsBrl(r.TotalEntradasCents)} | Saídas R$ {TaxIdValidator.FormatCentsBrl(r.TotalSaidasCents)}");
+            }
+            else
+            {
+                ToolTip.SetTip(this, null);
+            }
             InvalidateVisual();
         }
     }
@@ -176,6 +191,8 @@ public sealed class CompositionDonutControl : Control
     {
         _entradasCents = Math.Max(0, entradasCents);
         _saidasCents = Math.Max(0, saidasCents);
+        AutomationProperties.SetName(this,
+            $"Gráfico comparativo do período: Entradas R$ {TaxIdValidator.FormatCentsBrl(_entradasCents)}, Saídas R$ {TaxIdValidator.FormatCentsBrl(_saidasCents)}");
         InvalidateVisual();
     }
 

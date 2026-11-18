@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Media;
 
@@ -44,13 +45,15 @@ public static class VectorIcons
 
     public static PathIcon Create(string pathData, string hexColor, double size = 18)
     {
-        return new PathIcon
+        var icon = new PathIcon
         {
             Data = Geometry.Parse(pathData),
             Foreground = Brush.Parse(hexColor),
             Width = size,
             Height = size
         };
+        AutomationProperties.SetAccessibilityView(icon, AccessibilityView.Raw);
+        return icon;
     }
 
     /// <summary>

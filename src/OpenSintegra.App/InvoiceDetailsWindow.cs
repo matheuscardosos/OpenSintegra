@@ -321,5 +321,6 @@ public sealed class InvoiceDetailsWindow : Window
         root.Children.Add(foot);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, btnClose);
     }
 }

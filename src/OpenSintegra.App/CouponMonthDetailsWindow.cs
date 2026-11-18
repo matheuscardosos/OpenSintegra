@@ -329,5 +329,6 @@ public sealed class CouponMonthDetailsWindow : Window
         root.Children.Add(foot);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, txtSearch);
     }
 }

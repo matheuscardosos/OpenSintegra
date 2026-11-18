@@ -111,6 +111,12 @@ public sealed class ImportProgressWindow : Window
         root.Children.Add(btnCancel);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, btnCancel, () =>
+        {
+            btnCancel.IsEnabled = false;
+            btnCancel.Content = "Cancelando...";
+            _cts.Cancel();
+        });
     }
 
     public void UpdateProgress(int percent, string status)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -252,12 +253,14 @@ public sealed class InjectMissingXmlWindow : Window
 
             var rowGrid = new Grid { ColumnDefinitions = new ColumnDefinitions(colSpec), Margin = new Thickness(0, 2) };
 
+            string nfShort = $"{xml.Numero.TrimStart('0').PadLeft(1, '0')}/{xml.Serie}";
             var chk = new CheckBox
             {
                 IsChecked = !isReprocessMode || !item.AlreadyInSintegra,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
+            AutomationProperties.SetName(chk, $"Selecionar NF {nfShort} de {xml.EmitNome}");
 
             var emiStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 2) };
             emiStack.Children.Add(new TextBlock
@@ -298,15 +301,18 @@ public sealed class InjectMissingXmlWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
+            AutomationProperties.SetName(txtEntryDate, $"Data de Entrada NF {nfShort}");
 
+            string nfFullLabel = $"NF {nfShort} - {xml.EmitNome}";
             var nfText = new TextBlock
             {
-                Text = $"NF {xml.Numero.TrimStart('0').PadLeft(1, '0')}/{xml.Serie} - {xml.EmitNome}",
+                Text = nfFullLabel,
                 FontSize = 11.5,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 Padding = new Thickness(6, 4)
             };
+            ToolTip.SetTip(nfText, nfFullLabel);
 
             var tVal = new TextBlock
             {
@@ -329,6 +335,7 @@ public sealed class InjectMissingXmlWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
+            AutomationProperties.SetName(txtCfop, $"CFOP de Entrada NF {nfShort}");
 
             Grid.SetColumn(chk, 0);
             Grid.SetColumn(emiStack, 1);
@@ -498,6 +505,7 @@ public sealed class InjectMissingXmlWindow : Window
         root.Children.Add(bottomGrid);
 
         Content = root;
+        UiTableHelpers.ConfigureModalShortcuts(this, txtBatchDate, () => Close(false));
     }
 
     private static Button MakeMiniButton(string text, string bgHex = "#F1F5F9", IBrush? fg = null) => new()
