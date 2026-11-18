@@ -4,7 +4,7 @@
 
 # OpenSintegra Contábil
 
-[![CI Build and Test](https://github.com/opensintegra/open-sintegra/actions/workflows/ci.yml/badge.svg)](https://github.com/opensintegra/open-sintegra/actions/workflows/ci.yml)
+[![CI Build and Test](https://github.com/matheuscardosos/OpenSintegra/actions/workflows/ci.yml/badge.svg)](https://github.com/matheuscardosos/OpenSintegra/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#instalação-e-execução)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)](https://dotnet.microsoft.com/)
@@ -56,8 +56,8 @@ Cada versão publicada oferece **Instalador Tradicional** e **Pacote Portátil**
 ### Compilar e Testar
 
 ```bash
-git clone https://github.com/opensintegra/open-sintegra.git
-cd open-sintegra
+git clone https://github.com/matheuscardosos/OpenSintegra.git
+cd OpenSintegra
 dotnet restore
 dotnet test
 ```

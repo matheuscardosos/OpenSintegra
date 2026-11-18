@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Relatar Vulnerabilidade de Segurança
+    url: https://github.com/matheuscardosos/OpenSintegra/security/advisories/new
+    about: Use Security Advisories para relatar falhas sensíveis de forma privada.
