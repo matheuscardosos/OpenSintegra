@@ -5,7 +5,7 @@ O utilitário `opensintegra-cli` oferece todas as capacidades do motor fiscal em
 ## Comandos Disponíveis
 
 ### `validate`
-Valida um arquivo Sintegra mensal ou anual e calcula entradas, saídas e equilíbrio fiscal.
+Valida um arquivo Sintegra mensal ou anual e calcula entradas, saídas e saldo (`Saídas - Entradas`).
 
 ```bash
 opensintegra-cli validate <arquivo.txt> [--month YYYYMM] [--json] [--save-db] [--db caminho.db]

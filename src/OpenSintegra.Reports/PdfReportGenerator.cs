@@ -99,8 +99,8 @@ public static class PdfReportGenerator
         DrawSectionBand(canvas!, ref y, "Resumo do Período", tfBold, paintDark, paintFillHeader);
         y += 8f;
 
-        float boxH = 54f;
-        float[] colWs = [122f, 122f, 140f, ContentW - 384f];
+        float boxH = 46f;
+        float[] colWs = [124f, 124f, 134f, ContentW - 382f];
         var boxRect = new SKRect(Margin, y, Margin + ContentW, y + boxH);
         canvas!.DrawRoundRect(boxRect, 4f, 4f, paintWhite);
 
@@ -129,10 +129,9 @@ public static class PdfReportGenerator
             $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", tfReg, tfBold, paintMuted, paintDark);
         DrawSummaryBoxCell(canvas, Margin + colWs[0], colWs[1], y, "Total de Saídas (Vendas)",
             $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", tfReg, tfBold, paintMuted, paintDark);
-        string ratioSub = v.RatioSaidaSobreEntradaPct.HasValue ? $"Saídas: {v.RatioSaidaSobreEntradaPct.Value:N1}% das entradas" : "-";
         DrawSummaryBoxCell(canvas, xSaldo, colWs[2], y, "Saldo (Saídas - Entradas)",
             TaxIdValidator.FormatSignedCentsBrl(v.SaldoLiquidoCents),
-            tfReg, tfBold, paintMuted, saldoPos ? paintGreen : paintRed, ratioSub);
+            tfReg, tfBold, paintMuted, saldoPos ? paintGreen : paintRed);
 
         string missingText = ctx.Audit is null
             ? "XML não carregado"
@@ -149,7 +148,7 @@ public static class PdfReportGenerator
             DrawSectionBand(canvas!, ref y, "Movimentação Mês a Mês (Entradas x Saídas x Saldo x Conferência XML)", tfBold, paintDark, paintFillHeader);
             y += 6f;
 
-            float[] mCols = [44f, 65f, 55f, 67f, 67f, 75f, 38f, ContentW - 411f];
+            float[] mCols = [46f, 70f, 60f, 74f, 74f, 82f, ContentW - 406f];
             DrawMonthlyHeaderRow(canvas!, y, mCols, tfBold, paintDark, paintFillHeader);
             y += 22f;
 
@@ -162,15 +161,13 @@ public static class PdfReportGenerator
                 canvas!.DrawLine(Margin, y + 20f, Margin + ContentW, y + 20f, paintLine);
 
                 float mx = Margin;
-                DrawCellLeft(canvas, mx, mCols[0], y + 13f, m.MonthLabel, tfReg, 8.0f, paintDark); mx += mCols[0];
-                DrawCellRight(canvas, mx, mCols[1], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.ComprasEntradasCents)}", tfReg, 7.8f, paintDark); mx += mCols[1];
-                DrawCellRight(canvas, mx, mCols[2], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.OutrasEntradasCents)}", tfReg, 7.8f, paintMuted); mx += mCols[2];
-                DrawCellRight(canvas, mx, mCols[3], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.TotalEntradasCents)}", tfBold, 7.8f, paintDark); mx += mCols[3];
-                DrawCellRight(canvas, mx, mCols[4], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.TotalSaidasCents)}", tfBold, 7.8f, paintDark); mx += mCols[4];
-                DrawCellRight(canvas, mx, mCols[5], y + 13f, TaxIdValidator.FormatSignedCentsBrl(m.SaldoLiquidoCents), tfBold, 7.8f,
+                DrawCellLeft(canvas, mx, mCols[0], y + 13f, m.MonthLabel, tfReg, 8.2f, paintDark); mx += mCols[0];
+                DrawCellRight(canvas, mx, mCols[1], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.ComprasEntradasCents)}", tfReg, 8.0f, paintDark); mx += mCols[1];
+                DrawCellRight(canvas, mx, mCols[2], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.OutrasEntradasCents)}", tfReg, 8.0f, paintMuted); mx += mCols[2];
+                DrawCellRight(canvas, mx, mCols[3], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.TotalEntradasCents)}", tfBold, 8.0f, paintDark); mx += mCols[3];
+                DrawCellRight(canvas, mx, mCols[4], y + 13f, $"R$ {TaxIdValidator.FormatCentsBrl(m.TotalSaidasCents)}", tfBold, 8.0f, paintDark); mx += mCols[4];
+                DrawCellRight(canvas, mx, mCols[5], y + 13f, TaxIdValidator.FormatSignedCentsBrl(m.SaldoLiquidoCents), tfBold, 8.0f,
                     m.SaldoLiquidoCents >= 0 ? paintGreen : paintRed); mx += mCols[5];
-                DrawCellRight(canvas, mx, mCols[6], y + 13f,
-                    m.SaidaSobreEntradaPct.HasValue ? $"{m.SaidaSobreEntradaPct.Value:N1}%" : "-", tfReg, 7.8f, paintBlue); mx += mCols[6];
 
                 string xmlStatus = "Sem XML";
                 SKPaint xmlPaint = paintMuted;
@@ -187,7 +184,7 @@ public static class PdfReportGenerator
                         xmlPaint = paintGreen;
                     }
                 }
-                DrawCellRight(canvas, mx, mCols[7], y + 13f, xmlStatus, tfBold, 7.8f, xmlPaint);
+                DrawCellRight(canvas, mx, mCols[6], y + 13f, xmlStatus, tfBold, 8.0f, xmlPaint);
 
                 y += 20f;
                 alt = !alt;
@@ -197,17 +194,15 @@ public static class PdfReportGenerator
             EnsureSpace(24f);
             canvas!.DrawRect(new SKRect(Margin, y, Margin + ContentW, y + 22f), paintFillHeader);
             float tx = Margin;
-            DrawCellLeft(canvas, tx, mCols[0], y + 14f, "Total", tfBold, 8.2f, paintDark); tx += mCols[0];
-            DrawCellRight(canvas, tx, mCols[1], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.ComprasEntradasCents)}", tfBold, 7.8f, paintDark); tx += mCols[1];
-            DrawCellRight(canvas, tx, mCols[2], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.OutrasEntradasCents)}", tfBold, 7.8f, paintDark); tx += mCols[2];
-            DrawCellRight(canvas, tx, mCols[3], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", tfBold, 7.8f, paintDark); tx += mCols[3];
-            DrawCellRight(canvas, tx, mCols[4], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", tfBold, 7.8f, paintDark); tx += mCols[4];
-            DrawCellRight(canvas, tx, mCols[5], y + 14f, TaxIdValidator.FormatSignedCentsBrl(v.SaldoLiquidoCents), tfBold, 7.8f,
+            DrawCellLeft(canvas, tx, mCols[0], y + 14f, "Total", tfBold, 8.4f, paintDark); tx += mCols[0];
+            DrawCellRight(canvas, tx, mCols[1], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.ComprasEntradasCents)}", tfBold, 8.0f, paintDark); tx += mCols[1];
+            DrawCellRight(canvas, tx, mCols[2], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.OutrasEntradasCents)}", tfBold, 8.0f, paintDark); tx += mCols[2];
+            DrawCellRight(canvas, tx, mCols[3], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", tfBold, 8.0f, paintDark); tx += mCols[3];
+            DrawCellRight(canvas, tx, mCols[4], y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", tfBold, 8.0f, paintDark); tx += mCols[4];
+            DrawCellRight(canvas, tx, mCols[5], y + 14f, TaxIdValidator.FormatSignedCentsBrl(v.SaldoLiquidoCents), tfBold, 8.0f,
                 saldoPos ? paintGreen : paintRed); tx += mCols[5];
             DrawCellRight(canvas, tx, mCols[6], y + 14f,
-                v.RatioSaidaSobreEntradaPct.HasValue ? $"{v.RatioSaidaSobreEntradaPct.Value:N1}%" : "-", tfBold, 7.8f, paintBlue); tx += mCols[6];
-            DrawCellRight(canvas, tx, mCols[7], y + 14f,
-                ctx.Audit is null ? "-" : $"{v.XmlComprasOmissas} falta(s)", tfBold, 7.8f, hasMissing ? paintRed : paintGreen);
+                ctx.Audit is null ? "-" : $"{v.XmlComprasOmissas} falta(s)", tfBold, 8.0f, hasMissing ? paintRed : paintGreen);
             y += 32f;
         }
 
@@ -388,26 +383,23 @@ public static class PdfReportGenerator
 
     private static void DrawSummaryBoxCell(
         SKCanvas c, float x, float w, float y, string label, string value,
-        SKTypeface tfReg, SKTypeface tfBold, SKPaint muted, SKPaint valPaint, string? subtitle = null)
+        SKTypeface tfReg, SKTypeface tfBold, SKPaint muted, SKPaint valPaint)
     {
-        DrawText(c, label, x + 8f, y + 14f, tfReg, 8.0f, muted);
-        DrawText(c, value, x + 8f, y + 32f, tfBold, 10.6f, valPaint);
-        if (!string.IsNullOrWhiteSpace(subtitle))
-            DrawText(c, subtitle, x + 8f, y + 45f, tfReg, 7.4f, muted);
+        DrawText(c, label, x + 8f, y + 15f, tfReg, 8.2f, muted);
+        DrawText(c, value, x + 8f, y + 34f, tfBold, 10.8f, valPaint);
     }
 
     private static void DrawMonthlyHeaderRow(SKCanvas c, float y, float[] cols, SKTypeface tfBold, SKPaint dark, SKPaint fill)
     {
         c.DrawRect(new SKRect(Margin, y, Margin + ContentW, y + 21f), fill);
         float x = Margin;
-        DrawCellLeft(c, x, cols[0], y + 14f, "Mês", tfBold, 7.9f, dark); x += cols[0];
-        DrawCellRight(c, x, cols[1], y + 14f, "Compras", tfBold, 7.9f, dark); x += cols[1];
-        DrawCellRight(c, x, cols[2], y + 14f, "Outras", tfBold, 7.9f, dark); x += cols[2];
-        DrawCellRight(c, x, cols[3], y + 14f, "Tot. Entr.", tfBold, 7.9f, dark); x += cols[3];
-        DrawCellRight(c, x, cols[4], y + 14f, "Tot. Saídas", tfBold, 7.9f, dark); x += cols[4];
-        DrawCellRight(c, x, cols[5], y + 14f, "Saídas - Entr.", tfBold, 7.9f, dark); x += cols[5];
-        DrawCellRight(c, x, cols[6], y + 14f, "S / E", tfBold, 7.9f, dark); x += cols[6];
-        DrawCellRight(c, x, cols[7], y + 14f, "Conferência XML", tfBold, 7.9f, dark);
+        DrawCellLeft(c, x, cols[0], y + 14f, "Mês", tfBold, 8.1f, dark); x += cols[0];
+        DrawCellRight(c, x, cols[1], y + 14f, "Compras", tfBold, 8.1f, dark); x += cols[1];
+        DrawCellRight(c, x, cols[2], y + 14f, "Outras Entr.", tfBold, 8.1f, dark); x += cols[2];
+        DrawCellRight(c, x, cols[3], y + 14f, "Tot. Entr.", tfBold, 8.1f, dark); x += cols[3];
+        DrawCellRight(c, x, cols[4], y + 14f, "Tot. Saídas", tfBold, 8.1f, dark); x += cols[4];
+        DrawCellRight(c, x, cols[5], y + 14f, "Saídas - Entr.", tfBold, 8.1f, dark); x += cols[5];
+        DrawCellRight(c, x, cols[6], y + 14f, "Conferência XML", tfBold, 8.1f, dark);
     }
 
     private static void DrawFooter(

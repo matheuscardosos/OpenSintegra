@@ -838,15 +838,14 @@ public sealed class MainWindow : Window
         Grid.SetColumn(cardSaidas, 2);
         kpiGrid.Children.Add(cardSaidas);
 
-        string ratioDisplay = _scoped.RatioSaidaSobreEntradaPct is double r ? $"{r:N1}%" : "-";
         bool salesHigher = _scoped.TotalSaidasCents >= _scoped.TotalEntradasCents;
         string diffBadge = salesHigher ? "Saídas > Entradas" : "Entradas > Saídas";
 
         string kpi3Sub = _audit is null
-            ? $"Saídas equivalem a {ratioDisplay} das entradas"
+            ? "Diferença: Saídas menos Entradas"
             : _scoped.XmlComprasOmissas > 0
-                ? $"Saídas = {ratioDisplay} | Faltam {_scoped.XmlComprasOmissas} XML(s)"
-                : $"Saídas = {ratioDisplay} | XML 100% lançado";
+                ? $"Faltam {_scoped.XmlComprasOmissas} XML(s) (R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)})"
+                : "Todas as compras XML lançadas";
 
         var cardRatio = BuildKpiCard(
             VectorIcons.Scale, salesHigher ? "#16A34A" : "#DC2626", salesHigher ? "#DCFCE7" : "#FEE2E2",
@@ -872,7 +871,7 @@ public sealed class MainWindow : Window
         Grid.SetColumn(barCard, 0);
         chartsRow.Children.Add(barCard);
 
-        var donutCard = CreateCardShell("Proporção do Período", VectorIcons.ChartBar, null);
+        var donutCard = CreateCardShell("Comparativo do Período", VectorIcons.ChartBar, null);
         var donutChart = new CompositionDonutControl { Width = 136, Height = 136 };
         donutChart.SetData(_scoped.TotalEntradasCents, _scoped.TotalSaidasCents);
 
@@ -885,13 +884,9 @@ public sealed class MainWindow : Window
         Grid.SetColumn(donutChart, 0);
         donutLayout.Children.Add(donutChart);
 
-        long totMov = _scoped.TotalEntradasCents + _scoped.TotalSaidasCents;
-        double saiShare = totMov > 0 ? (_scoped.TotalSaidasCents * 100.0 / totMov) : 0;
-        double entShare = totMov > 0 ? (_scoped.TotalEntradasCents * 100.0 / totMov) : 0;
-
-        var legendStack = new StackPanel { Spacing = 12, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        legendStack.Children.Add(CreateDonutLegendItem("#16A34A", "Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}", $"({saiShare:N1}%)"));
-        legendStack.Children.Add(CreateDonutLegendItem("#2563EB", "Entradas", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalEntradasCents)}", $"({entShare:N1}%)"));
+        var legendStack = new StackPanel { Spacing = 14, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        legendStack.Children.Add(CreateDonutLegendItem("#16A34A", "Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}", ""));
+        legendStack.Children.Add(CreateDonutLegendItem("#2563EB", "Entradas", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalEntradasCents)}", ""));
         Grid.SetColumn(legendStack, 1);
         donutLayout.Children.Add(legendStack);
 
@@ -980,7 +975,7 @@ public sealed class MainWindow : Window
         };
 
         var stack = new StackPanel();
-        string cols = "64,0.88*,0.74*,0.92*,0.92*,0.95*,0.62*,1.15*";
+        string cols = "68,0.92*,0.82*,0.98*,0.98*,1.02*,1.22*";
 
         var hdrGrid = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
         AddHeaderCell(hdrGrid, 0, "Mês", TextAlignment.Left);
@@ -988,9 +983,8 @@ public sealed class MainWindow : Window
         AddHeaderCell(hdrGrid, 2, "Outras Entr.", TextAlignment.Right);
         AddHeaderCell(hdrGrid, 3, "Total Entradas", TextAlignment.Right);
         AddHeaderCell(hdrGrid, 4, "Total Saídas", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 5, "Saídas - Entr.", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 6, "S / E", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 7, "Conferência XML", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 5, "Saídas - Entradas", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 6, "Conferência XML", TextAlignment.Right);
         stack.Children.Add(hdrGrid);
 
         if (rows.Count == 0)
@@ -1022,7 +1016,6 @@ public sealed class MainWindow : Window
             AddBodyCellFast(rowGrid, 3, $"R$ {TaxIdValidator.FormatCentsBrl(r.TotalEntradasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
             AddBodyCellFast(rowGrid, 4, $"R$ {TaxIdValidator.FormatCentsBrl(r.TotalSaidasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
             AddBodyCellFast(rowGrid, 5, TaxIdValidator.FormatSignedCentsBrl(r.SaldoLiquidoCents), TextAlignment.Right, FontWeight.SemiBold, r.SaldoLiquidoCents >= 0 ? BrushGreen : BrushRed);
-            AddBodyCellFast(rowGrid, 6, r.SaidaSobreEntradaPct is double p ? $"{p:N1}%" : "-", TextAlignment.Right, FontWeight.SemiBold, BrushBlueDark);
 
             string xmlTxt = "Sem XML";
             IBrush xmlBrush = BrushMuted;
@@ -1039,7 +1032,7 @@ public sealed class MainWindow : Window
                     xmlBrush = BrushGreen;
                 }
             }
-            AddBodyCellFast(rowGrid, 7, xmlTxt, TextAlignment.Right, FontWeight.SemiBold, xmlBrush);
+            AddBodyCellFast(rowGrid, 6, xmlTxt, TextAlignment.Right, FontWeight.SemiBold, xmlBrush);
 
             string ymClicked = r.YearMonth;
             rowGrid.Tapped += (_, _) => SelectPeriodInCombo(_selectedYearMonth == ymClicked ? "ALL" : ymClicked);
@@ -1827,16 +1820,15 @@ public sealed class MainWindow : Window
             {
                 var tbl = new Border { BorderBrush = BrushBorderLight, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
                 var rows = new StackPanel();
-                string cols = "76,0.9*,0.78*,0.92*,0.92*,0.95*,68,1.15*";
+                string cols = "76,0.95*,0.82*,0.95*,0.95*,1.0*,1.25*";
                 var hdr = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
                 AddHeaderCell(hdr, 0, "Mês", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, "Compras", TextAlignment.Right);
                 AddHeaderCell(hdr, 2, "Outras", TextAlignment.Right);
                 AddHeaderCell(hdr, 3, "Entradas", TextAlignment.Right);
                 AddHeaderCell(hdr, 4, "Saídas", TextAlignment.Right);
-                AddHeaderCell(hdr, 5, "Saídas - Entr.", TextAlignment.Right);
-                AddHeaderCell(hdr, 6, "S / E", TextAlignment.Right);
-                AddHeaderCell(hdr, 7, "Arquivo Origem", TextAlignment.Left);
+                AddHeaderCell(hdr, 5, "Saídas - Entradas", TextAlignment.Right);
+                AddHeaderCell(hdr, 6, "Arquivo Origem", TextAlignment.Left);
                 rows.Children.Add(hdr);
 
                 int idx = 0;
@@ -1850,8 +1842,7 @@ public sealed class MainWindow : Window
                     AddBodyCellFast(g, 3, $"R$ {TaxIdValidator.FormatCentsBrl(t.TotalEntradasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
                     AddBodyCellFast(g, 4, $"R$ {TaxIdValidator.FormatCentsBrl(t.TotalSaidasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
                     AddBodyCellFast(g, 5, TaxIdValidator.FormatSignedCentsBrl(saldoT), TextAlignment.Right, FontWeight.SemiBold, saldoT >= 0 ? BrushGreen : BrushRed);
-                    AddBodyCellFast(g, 6, t.RatioPct is double rp ? $"{rp:N1}%" : "-", TextAlignment.Right, FontWeight.SemiBold, BrushBlueDark);
-                    AddBodyCellFast(g, 7, t.SourceFileName, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    AddBodyCellFast(g, 6, t.SourceFileName, TextAlignment.Left, FontWeight.Normal, BrushMuted);
                     rows.Children.Add(new Border { BorderBrush = BrushBorderLight, BorderThickness = new Thickness(0, 1, 0, 0), Child = g });
                 }
                 tbl.Child = rows;
@@ -2621,7 +2612,8 @@ public sealed class MainWindow : Window
         var sp = new StackPanel();
         sp.Children.Add(new TextBlock { Text = label, FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark });
         sp.Children.Add(new TextBlock { Text = valText, FontSize = 11.5, Foreground = BrushTextBody });
-        sp.Children.Add(new TextBlock { Text = pctText, FontSize = 11, Foreground = BrushMuted });
+        if (!string.IsNullOrEmpty(pctText))
+            sp.Children.Add(new TextBlock { Text = pctText, FontSize = 11, Foreground = BrushMuted });
         row.Children.Add(sp);
         return row;
     }

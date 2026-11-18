@@ -31,7 +31,7 @@ Não possui dependências externas além da BCL do `.NET 8`. Opera integralmente
 - **`SintegraAutoFixer.cs`:** Corrige erros recuperáveis em memória ou disco (`AutoFix(...)`) e implementa a divisão de arquivos anuais por competência (`SplitAnnualByMonth(...)`).
 - **`SintegraXmlInjector.cs`:** Converte XMLs de compras omitidas em registros `50`, `54` e `75` padronizados em 126 colunas, ajustando o Registro `90` e mantendo compatibilidade integral com `AutoFix`.
 - **`FiscalCrossAuditor.cs`:** Parser de XMLs fiscais (`.xml` solto, diretório ou `.zip` em streaming) e SPED Fiscal `EFD ICMS/IPI` (Blocos `0200` e `C100`), cruzando chaves de acesso, números módulo `1.000.000`, `refNFe` de devolução e natureza CFOP.
-- **`PeriodFilter.cs`:** Constrói a projeção `ScopedFiscalView` para `"ALL"` (período inteiro) ou `"YYYYMM"` (mês específico), calculando entradas, saídas, proporção `Saídas / Entradas`, cobertura XML por mês e ranking de produtos mais vendidos para tela principal, visualização de impressão, PDF e XLSX.
+- **`PeriodFilter.cs`:** Constrói a projeção `ScopedFiscalView` para `"ALL"` (período inteiro) ou `"YYYYMM"` (mês específico), calculando entradas, saídas, saldo líquido (`Saídas - Entradas`), cobertura XML por mês e ranking de produtos mais vendidos para tela principal, visualização de impressão, PDF e XLSX.
 - **`RecordSchemaDecomposer.cs`:** Mapeia posições de colunas 1..126 de todos os tipos de registro para o Inspetor de Campos interativo.
 
 ### 2.2 `OpenSintegra.Data` (Persistência SQLite)

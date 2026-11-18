@@ -130,7 +130,6 @@ internal static class Program
         Console.WriteLine($"Entradas: R$ {TaxIdValidator.FormatCentsBrl(scoped.TotalEntradasCents)} (Compras R$ {TaxIdValidator.FormatCentsBrl(scoped.ComprasEntradasCents)})");
         Console.WriteLine($"Saídas:   R$ {TaxIdValidator.FormatCentsBrl(scoped.TotalSaidasCents)}");
         Console.WriteLine($"Saldo (Saídas - Entradas): {TaxIdValidator.FormatSignedCentsBrl(scoped.SaldoLiquidoCents)}");
-        Console.WriteLine($"Equilíbrio S/E: {(scoped.RatioSaidaSobreEntradaPct is double r ? $"{r:N1}%" : "-")}");
 
         if (scoped.Diagnostics.Count > 0)
         {
