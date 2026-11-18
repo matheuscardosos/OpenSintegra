@@ -58,6 +58,8 @@ public sealed class MainWindow : Window
     private string _auditFilter = "MISSING"; // Default: spotlight missing XML invoices!
     private string _diagFilter = "ALL";
     private string? _selectedCompanyCnpj;
+    private bool _isCompactLayout;
+    private bool IsCompactWidth => Bounds.Width > 100 && Bounds.Width < 1180;
 
     // Header & status controls
     private readonly TextBlock _hdrCompanyName = new();
@@ -107,6 +109,17 @@ public sealed class MainWindow : Window
         BuildShellLayout();
         SetEmptyWelcomeState();
 
+        SizeChanged += (_, e) =>
+        {
+            bool nextCompact = e.NewSize.Width > 100 && e.NewSize.Width < 1180;
+            if (nextCompact != _isCompactLayout)
+            {
+                _isCompactLayout = nextCompact;
+                if (_activeSection == NavSection.VisaoGeral && _hasDocument)
+                    RenderActiveSection();
+            }
+        };
+
         Opened += async (_, _) =>
         {
             string? sintegraToLoad = (!string.IsNullOrWhiteSpace(initialFilePath) && File.Exists(initialFilePath))
@@ -138,7 +151,7 @@ public sealed class MainWindow : Window
         Grid.SetRow(toolbar, 1);
         outerGrid.Children.Add(toolbar);
 
-        var bodyGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("220,*") };
+        var bodyGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("208,*") };
 
         var sidebar = BuildLeftSidebar();
         Grid.SetColumn(sidebar, 0);
@@ -449,9 +462,13 @@ public sealed class MainWindow : Window
             Padding = new Thickness(14, 10)
         };
 
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto") };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,Auto") };
 
-        var companyStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
+        var companyGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
         var icoBox = new Border
         {
             Width = 34,
@@ -460,37 +477,51 @@ public sealed class MainWindow : Window
             Background = Brush.Parse("#EFF6FF"),
             BorderBrush = Brush.Parse("#BFDBFE"),
             BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 10, 0),
             Child = VectorIcons.Create(VectorIcons.Building, "#1E40AF", 20)
         };
-        companyStack.Children.Add(icoBox);
+        Grid.SetColumn(icoBox, 0);
+        companyGrid.Children.Add(icoBox);
 
         var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         _hdrCompanyName.FontSize = 14;
         _hdrCompanyName.FontWeight = FontWeight.Bold;
         _hdrCompanyName.Foreground = BrushTextDark;
+        _hdrCompanyName.TextTrimming = TextTrimming.CharacterEllipsis;
         _hdrCompanyDocs.FontSize = 11.5;
         _hdrCompanyDocs.Foreground = Brush.Parse("#475569");
+        _hdrCompanyDocs.TextTrimming = TextTrimming.CharacterEllipsis;
         texts.Children.Add(_hdrCompanyName);
         texts.Children.Add(_hdrCompanyDocs);
-        companyStack.Children.Add(texts);
-        Grid.SetColumn(companyStack, 0);
-        grid.Children.Add(companyStack);
+        Grid.SetColumn(texts, 1);
+        companyGrid.Children.Add(texts);
+        Grid.SetColumn(companyGrid, 0);
+        grid.Children.Add(companyGrid);
+
+        var rightWrap = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
 
         var periodPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 6,
-            Margin = new Thickness(14, 0),
+            Margin = new Thickness(0, 2, 10, 2),
             VerticalAlignment = VerticalAlignment.Center
         };
-        periodPanel.Children.Add(new TextBlock
+        var lblPeriod = new TextBlock
         {
             Text = "Competência:",
             FontSize = 12,
             Foreground = Brush.Parse("#475569"),
             VerticalAlignment = VerticalAlignment.Center
-        });
-        _cmbPeriod.MinWidth = 225;
+        };
+        periodPanel.Children.Add(lblPeriod);
+        _cmbPeriod.MinWidth = 185;
+        _cmbPeriod.MaxWidth = 240;
         _cmbPeriod.FontSize = 12;
         _cmbPeriod.SelectionChanged += (_, _) =>
         {
@@ -502,20 +533,19 @@ public sealed class MainWindow : Window
             }
         };
         periodPanel.Children.Add(_cmbPeriod);
-        Grid.SetColumn(periodPanel, 1);
-        grid.Children.Add(periodPanel);
+        rightWrap.Children.Add(periodPanel);
 
         _hdrStatusPill.CornerRadius = new CornerRadius(14);
         _hdrStatusPill.Padding = new Thickness(12, 5);
-        _hdrStatusPill.Margin = new Thickness(0, 0, 10, 0);
+        _hdrStatusPill.Margin = new Thickness(0, 2, 10, 2);
         _hdrStatusPill.VerticalAlignment = VerticalAlignment.Center;
         _hdrStatusText.FontSize = 12;
         _hdrStatusText.FontWeight = FontWeight.SemiBold;
         _hdrStatusPill.Child = _hdrStatusText;
-        Grid.SetColumn(_hdrStatusPill, 2);
-        grid.Children.Add(_hdrStatusPill);
+        rightWrap.Children.Add(_hdrStatusPill);
 
         _btnSalvarAlteracoes.Classes.Add("success");
+        _btnSalvarAlteracoes.Margin = new Thickness(0, 2, 0, 2);
         _btnSalvarAlteracoes.VerticalAlignment = VerticalAlignment.Center;
         _btnSalvarAlteracoes.IsVisible = false;
         _btnSalvarAlteracoes.Content = new TextBlock
@@ -526,8 +556,10 @@ public sealed class MainWindow : Window
             Foreground = Brushes.White
         };
         _btnSalvarAlteracoes.Click += async (_, _) => await SaveCurrentBytesDialogAsync();
-        Grid.SetColumn(_btnSalvarAlteracoes, 3);
-        grid.Children.Add(_btnSalvarAlteracoes);
+        rightWrap.Children.Add(_btnSalvarAlteracoes);
+
+        Grid.SetColumn(rightWrap, 2);
+        grid.Children.Add(rightWrap);
 
         card.Child = grid;
         return card;
@@ -817,9 +849,12 @@ public sealed class MainWindow : Window
     private Control BuildDashboardView()
     {
         var root = new StackPanel { Spacing = 12 };
+        bool compact = IsCompactWidth;
 
-        // Row 1: 3 Clear, Human-Readable KPI Cards
-        var kpiGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*") };
+        // Row 1: Responsive KPI Cards (3 cols when wide, 2+1 cols when compact <= 1180px)
+        var kpiGrid = compact
+            ? new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*"), RowDefinitions = new RowDefinitions("Auto,12,Auto") }
+            : new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*") };
 
         var cardEntradas = BuildKpiCard(
             VectorIcons.ArrowDown, "#2563EB", "#DBEAFE",
@@ -828,6 +863,7 @@ public sealed class MainWindow : Window
             $"Compras p/ revenda: R$ {TaxIdValidator.FormatCentsBrl(_scoped.ComprasEntradasCents)}  |  Outras: R$ {TaxIdValidator.FormatCentsBrl(_scoped.OutrasEntradasCents)}",
             null);
         Grid.SetColumn(cardEntradas, 0);
+        Grid.SetRow(cardEntradas, 0);
         kpiGrid.Children.Add(cardEntradas);
 
         string saidasDetail = _scoped.SaidasReg50Cents > 0
@@ -841,6 +877,7 @@ public sealed class MainWindow : Window
             saidasDetail,
             null);
         Grid.SetColumn(cardSaidas, 2);
+        Grid.SetRow(cardSaidas, 0);
         kpiGrid.Children.Add(cardSaidas);
 
         bool salesHigher = _scoped.TotalSaidasCents >= _scoped.TotalEntradasCents;
@@ -859,21 +896,35 @@ public sealed class MainWindow : Window
             kpi3Sub,
             (diffBadge, salesHigher ? "#DCFCE7" : "#FEE2E2", salesHigher ? "#15803D" : "#B91C1C"),
             salesHigher ? "#15803D" : "#B91C1C");
-        Grid.SetColumn(cardRatio, 4);
+        if (compact)
+        {
+            Grid.SetColumn(cardRatio, 0);
+            Grid.SetColumnSpan(cardRatio, 3);
+            Grid.SetRow(cardRatio, 2);
+        }
+        else
+        {
+            Grid.SetColumn(cardRatio, 4);
+        }
         kpiGrid.Children.Add(cardRatio);
 
         root.Children.Add(kpiGrid);
 
-        // Row 2: Charts + Alerts Sidebar
-        var lowerGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,285") };
+        // Row 2: Charts + Alerts Sidebar (reflow cleanly when compact)
+        var lowerGrid = compact
+            ? new Grid { RowDefinitions = new RowDefinitions("Auto,12,Auto") }
+            : new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,285") };
         var leftCol = new StackPanel { Spacing = 12 };
 
-        var chartsRow = new Grid { ColumnDefinitions = new ColumnDefinitions("1.42*,12,*") };
+        var chartsRow = compact
+            ? new Grid { RowDefinitions = new RowDefinitions("Auto,12,Auto") }
+            : new Grid { ColumnDefinitions = new ColumnDefinitions("1.42*,12,*") };
         var barCard = CreateCardShell("Evolução Mensal: Entradas vs Saídas", VectorIcons.ChartBar, BuildBarLegend());
         var barChart = new MonthlyBarChartControl { Height = 190 };
         barChart.SetData(_report.MonthlyBalance.ToList(), _scoped.IsSingleMonthFilter ? _scoped.SelectedYearMonth : null);
         ((StackPanel)barCard.Child!).Children.Add(barChart);
         Grid.SetColumn(barCard, 0);
+        Grid.SetRow(barCard, 0);
         chartsRow.Children.Add(barCard);
 
         var donutCard = CreateCardShell("Comparativo do Período", VectorIcons.ChartBar, null);
@@ -896,7 +947,15 @@ public sealed class MainWindow : Window
         donutLayout.Children.Add(legendStack);
 
         ((StackPanel)donutCard.Child!).Children.Add(donutLayout);
-        Grid.SetColumn(donutCard, 2);
+        if (compact)
+        {
+            Grid.SetColumn(donutCard, 0);
+            Grid.SetRow(donutCard, 2);
+        }
+        else
+        {
+            Grid.SetColumn(donutCard, 2);
+        }
         chartsRow.Children.Add(donutCard);
 
         leftCol.Children.Add(chartsRow);
@@ -907,10 +966,10 @@ public sealed class MainWindow : Window
         leftCol.Children.Add(tableCard);
 
         Grid.SetColumn(leftCol, 0);
+        Grid.SetRow(leftCol, 0);
         lowerGrid.Children.Add(leftCol);
 
         // Right Sidebar inside Dashboard: Focused Pendencias + Direct Client Action
-        var rightCol = new StackPanel { Spacing = 12 };
         var alertsCard = CreateCardShell("Situação e Pendências", VectorIcons.Warning, null);
         var alertsBody = (StackPanel)alertsCard.Child!;
 
@@ -948,8 +1007,6 @@ public sealed class MainWindow : Window
             errCount > 0 ? "Clique para corrigir automaticamente." : "Arquivo pronto para validação ou divisão mensal.",
             () => NavigateTo(NavSection.CorrecaoEExportacao)));
 
-        rightCol.Children.Add(alertsCard);
-
         var actionsCard = CreateCardShell("Relatório para o Cliente", VectorIcons.DocumentText, null);
         var actionsBody = (StackPanel)actionsCard.Child!;
         actionsBody.Spacing = 7;
@@ -960,10 +1017,24 @@ public sealed class MainWindow : Window
         if (_scoped.XmlComprasOmissas > 0)
             actionsBody.Children.Add(CreatePrimaryButton($"Lançar {_scoped.XmlComprasOmissas} Faltante(s) no Sintegra", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null)));
 
-        rightCol.Children.Add(actionsCard);
-
-        Grid.SetColumn(rightCol, 2);
-        lowerGrid.Children.Add(rightCol);
+        if (compact)
+        {
+            var compactRight = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*") };
+            Grid.SetColumn(alertsCard, 0);
+            Grid.SetColumn(actionsCard, 2);
+            compactRight.Children.Add(alertsCard);
+            compactRight.Children.Add(actionsCard);
+            Grid.SetRow(compactRight, 2);
+            lowerGrid.Children.Add(compactRight);
+        }
+        else
+        {
+            var rightCol = new StackPanel { Spacing = 12 };
+            rightCol.Children.Add(alertsCard);
+            rightCol.Children.Add(actionsCard);
+            Grid.SetColumn(rightCol, 2);
+            lowerGrid.Children.Add(rightCol);
+        }
 
         root.Children.Add(lowerGrid);
         return root;
@@ -1060,33 +1131,32 @@ public sealed class MainWindow : Window
     {
         var root = new StackPanel { Spacing = 12 };
 
-        var topBar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*,Auto") };
+        var topBar = new WrapPanel { Orientation = Orientation.Horizontal };
         var btnLoadXml = CreateQuickActionButton("Carregar XML / Pasta...", VectorIcons.UploadZip, null);
         var missXmlFlyout = BuildXmlActionsFlyout();
         btnLoadXml.Click += (_, _) => missXmlFlyout.ShowAt(btnLoadXml);
         btnLoadXml.HorizontalAlignment = HorizontalAlignment.Left;
-        Grid.SetColumn(btnLoadXml, 0);
+        btnLoadXml.Margin = new Thickness(0, 2, 10, 2);
         topBar.Children.Add(btnLoadXml);
 
         if (_audit is not null && _scoped.XmlComprasOmissas > 0)
         {
             var btnInjectAll = CreatePrimaryButton($"Lançar Todas as Faltantes ({_scoped.XmlComprasOmissas})", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null));
-            btnInjectAll.Margin = new Thickness(10, 0, 0, 0);
-            Grid.SetColumn(btnInjectAll, 1);
+            btnInjectAll.Margin = new Thickness(0, 2, 10, 2);
             topBar.Children.Add(btnInjectAll);
         }
 
         if (_audit is not null && _loadedXmlDocs.Count > 0)
         {
             var btnReprocess = CreateQuickActionButton("Reprocessar XMLs (Datas)", VectorIcons.Wrench, async () => await OpenReprocessXmlDialogAsync());
-            btnReprocess.Margin = new Thickness(10, 0, 0, 0);
-            Grid.SetColumn(btnReprocess, 2);
+            btnReprocess.HorizontalAlignment = HorizontalAlignment.Left;
+            btnReprocess.Margin = new Thickness(0, 2, 10, 2);
             topBar.Children.Add(btnReprocess);
         }
 
         var btnExportMissPdf = CreateQuickActionButton("Relatório de Notas Não Lançadas", VectorIcons.DocumentText, () => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas));
-        btnExportMissPdf.HorizontalAlignment = HorizontalAlignment.Right;
-        Grid.SetColumn(btnExportMissPdf, 4);
+        btnExportMissPdf.HorizontalAlignment = HorizontalAlignment.Left;
+        btnExportMissPdf.Margin = new Thickness(0, 2, 0, 2);
         topBar.Children.Add(btnExportMissPdf);
         root.Children.Add(topBar);
 
@@ -1600,15 +1670,23 @@ public sealed class MainWindow : Window
             TextWrapping = TextWrapping.Wrap
         });
 
-        var btns = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        btns.Children.Add(CreatePrimaryButton("Corrigir Erros Agora (Auto-Fix)", VectorIcons.Wrench, async () => await RunQuickFixAndRefreshAsync()));
+        var btns = new WrapPanel { Orientation = Orientation.Horizontal };
+        var btnFixNow = CreatePrimaryButton("Corrigir Erros Agora (Auto-Fix)", VectorIcons.Wrench, async () => await RunQuickFixAndRefreshAsync());
+        btnFixNow.Margin = new Thickness(0, 2, 10, 2);
+        btns.Children.Add(btnFixNow);
         if (_scoped.XmlComprasOmissas > 0)
-            btns.Children.Add(CreatePrimaryButton($"Lançar {_scoped.XmlComprasOmissas} XML(s) Faltantes", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null)));
+        {
+            var btnLaunchFix = CreatePrimaryButton($"Lançar {_scoped.XmlComprasOmissas} XML(s) Faltantes", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null));
+            btnLaunchFix.Margin = new Thickness(0, 2, 10, 2);
+            btns.Children.Add(btnLaunchFix);
+        }
 
         var btnSave = CreateQuickActionButton("Salvar Sintegra Atualizado (.txt)...", VectorIcons.ExportDoc, async () => await SaveCurrentBytesDialogAsync());
         btnSave.HorizontalAlignment = HorizontalAlignment.Left;
+        btnSave.Margin = new Thickness(0, 2, 10, 2);
         var btnSplit = CreateQuickActionButton("Dividir Anual em Arquivos Mensais...", VectorIcons.Split, async () => await ExportMonthlySplitsDialogAsync());
         btnSplit.HorizontalAlignment = HorizontalAlignment.Left;
+        btnSplit.Margin = new Thickness(0, 2, 0, 2);
 
         btns.Children.Add(btnSave);
         btns.Children.Add(btnSplit);
@@ -1750,15 +1828,17 @@ public sealed class MainWindow : Window
         regRow.Children.Add(cmbRegime);
         stack.Children.Add(regRow);
 
-        var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        btnRow.Children.Add(CreatePrimaryButton("Salvar Configurações", VectorIcons.CheckBadge, () =>
+        var btnRow = new WrapPanel { Orientation = Orientation.Horizontal };
+        var btnSaveCfg = CreatePrimaryButton("Salvar Configurações", VectorIcons.CheckBadge, () =>
         {
             _db.UpdateSettings((long)(numLimit.Value ?? 1024), chkPrune.IsChecked ?? true);
             if (_doc.Reg10 is not null && cmbRegime.SelectedItem is string reg)
                 _db.UpdateCompanyTaxRegime(_doc.Reg10.Cnpj, reg);
             UpdateHeaderAndStatusBar();
             RenderActiveSection();
-        }));
+        });
+        btnSaveCfg.Margin = new Thickness(0, 2, 10, 2);
+        btnRow.Children.Add(btnSaveCfg);
         var btnVacuum = CreateQuickActionButton("Compactar Base (VACUUM)", VectorIcons.Database, () =>
         {
             _db.CompactDatabase();
@@ -1766,6 +1846,7 @@ public sealed class MainWindow : Window
             RenderActiveSection();
         });
         btnVacuum.HorizontalAlignment = HorizontalAlignment.Left;
+        btnVacuum.Margin = new Thickness(0, 2, 10, 2);
         var btnClear = CreateQuickActionButton("Limpar Histórico", VectorIcons.Warning, () =>
         {
             _db.ClearAllHistory();
@@ -1773,6 +1854,7 @@ public sealed class MainWindow : Window
             RenderActiveSection();
         });
         btnClear.HorizontalAlignment = HorizontalAlignment.Left;
+        btnClear.Margin = new Thickness(0, 2, 0, 2);
         btnRow.Children.Add(btnVacuum);
         btnRow.Children.Add(btnClear);
         stack.Children.Add(btnRow);
@@ -2721,8 +2803,16 @@ public sealed class MainWindow : Window
         var col = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         col.Children.Add(new TextBlock { Text = label, FontSize = 12, Foreground = Brush.Parse("#475569") });
 
-        var valRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        valRow.Children.Add(new TextBlock { Text = bigValue, FontSize = 20, FontWeight = FontWeight.Bold, Foreground = bigValueHex is not null ? Brush.Parse(bigValueHex) : BrushTextDark });
+        var valRow = new WrapPanel { Orientation = Orientation.Horizontal };
+        valRow.Children.Add(new TextBlock
+        {
+            Text = bigValue,
+            FontSize = 20,
+            FontWeight = FontWeight.Bold,
+            Foreground = bigValueHex is not null ? Brush.Parse(bigValueHex) : BrushTextDark,
+            Margin = new Thickness(0, 0, 8, 2),
+            VerticalAlignment = VerticalAlignment.Center
+        });
         if (badge is { } b)
         {
             valRow.Children.Add(new Border
@@ -2730,6 +2820,7 @@ public sealed class MainWindow : Window
                 Background = Brush.Parse(b.BgHex),
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(8, 2),
+                Margin = new Thickness(0, 2, 0, 2),
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = new TextBlock { Text = b.Text, FontSize = 11, FontWeight = FontWeight.SemiBold, Foreground = Brush.Parse(b.FgHex) }
             });

@@ -388,7 +388,7 @@ public sealed class ReportPreviewWindow : Window
                 {
                     Text = "Nenhum arquivo XML foi importado para conferir notas não lançadas.",
                     FontSize = 12,
-                    Foreground = Brush.Parse("#64748B")
+                    Foreground = Brush.Parse("#475569")
                 });
             }
             else if (missingRows.Count == 0)
