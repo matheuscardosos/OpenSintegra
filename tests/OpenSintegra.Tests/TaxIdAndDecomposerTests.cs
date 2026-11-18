@@ -38,6 +38,9 @@ public sealed class TaxIdAndDecomposerTests
         Assert.Equal("17/11/2026", TaxIdValidator.FormatDateBr("20261117"));
         Assert.Equal("05/2026", TaxIdValidator.FormatMonthLabel("202605"));
         Assert.Equal("1.234,56", TaxIdValidator.FormatCentsBrl(123456));
+        Assert.Equal("R$ 47.013,45", TaxIdValidator.FormatSignedCentsBrl(4701345));
+        Assert.Equal("- R$ 10.585,76", TaxIdValidator.FormatSignedCentsBrl(-1058576));
+        Assert.Equal("R$ 0,00", TaxIdValidator.FormatSignedCentsBrl(0));
     }
 
     [Fact]

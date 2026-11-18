@@ -271,9 +271,13 @@ public sealed class ReportPreviewWindow : Window
         var sGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*") };
         sGrid.Children.Add(CreateSummaryCell("Total de Entradas", $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", "#FFFFFF", "#0F172A", 0, true));
         sGrid.Children.Add(CreateSummaryCell("Total de Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", "#FFFFFF", "#0F172A", 1, true));
-        sGrid.Children.Add(CreateSummaryCell("Saídas / Entradas",
-            v.RatioSaidaSobreEntradaPct.HasValue ? $"{v.RatioSaidaSobreEntradaPct.Value:N1}%" : "-",
-            "#FFFFFF", "#1D4ED8", 2, true));
+        bool saldoPos = v.SaldoLiquidoCents >= 0;
+        string ratioSub = v.RatioSaidaSobreEntradaPct.HasValue ? $"Saídas: {v.RatioSaidaSobreEntradaPct.Value:N1}% das entradas" : "-";
+        sGrid.Children.Add(CreateSummaryCell("Saldo (Saídas - Entradas)",
+            TaxIdValidator.FormatSignedCentsBrl(v.SaldoLiquidoCents),
+            saldoPos ? "#F0FDF4" : "#FEF2F2",
+            saldoPos ? "#15803D" : "#B91C1C",
+            2, true, ratioSub));
 
         bool hasMissing = _activeCtx.Audit is not null && v.XmlComprasOmissas > 0;
         string missText = _activeCtx.Audit is null
@@ -298,15 +302,16 @@ public sealed class ReportPreviewWindow : Window
                 ClipToBounds = true
             };
             var tStack = new StackPanel();
-            string cols = "65,98,90,98,98,84,*";
+            string cols = "54,82,70,86,86,92,52,*";
             var tHdr = new Grid { ColumnDefinitions = new ColumnDefinitions(cols) };
             tHdr.Children.Add(CreateCell("Mês", true, 0, false));
             tHdr.Children.Add(CreateCell("Compras", true, 1, true));
             tHdr.Children.Add(CreateCell("Outras Ent.", true, 2, true));
-            tHdr.Children.Add(CreateCell("Total Entradas", true, 3, true));
+            tHdr.Children.Add(CreateCell("Total Entr.", true, 3, true));
             tHdr.Children.Add(CreateCell("Total Saídas", true, 4, true));
-            tHdr.Children.Add(CreateCell("Saídas / Entr.", true, 5, true));
-            tHdr.Children.Add(CreateCell("Conferência XML", true, 6, true));
+            tHdr.Children.Add(CreateCell("Saídas - Entr.", true, 5, true));
+            tHdr.Children.Add(CreateCell("S / E", true, 6, true));
+            tHdr.Children.Add(CreateCell("Conferência XML", true, 7, true));
             tStack.Children.Add(new Border { Background = Brush.Parse("#F1F5F9"), Padding = new Thickness(10, 8), Child = tHdr });
 
             foreach (var m in v.MonthlyRows)
@@ -317,7 +322,10 @@ public sealed class ReportPreviewWindow : Window
                 r.Children.Add(CreateCell($"R$ {TaxIdValidator.FormatCentsBrl(m.OutrasEntradasCents)}", false, 2, true));
                 r.Children.Add(CreateCell($"R$ {TaxIdValidator.FormatCentsBrl(m.TotalEntradasCents)}", true, 3, true));
                 r.Children.Add(CreateCell($"R$ {TaxIdValidator.FormatCentsBrl(m.TotalSaidasCents)}", true, 4, true));
-                var prCell = CreateCell(m.SaidaSobreEntradaPct.HasValue ? $"{m.SaidaSobreEntradaPct.Value:N1}%" : "-", true, 5, true);
+                var salCell = CreateCell(TaxIdValidator.FormatSignedCentsBrl(m.SaldoLiquidoCents), true, 5, true);
+                salCell.Foreground = Brush.Parse(m.SaldoLiquidoCents >= 0 ? "#15803D" : "#B91C1C");
+                r.Children.Add(salCell);
+                var prCell = CreateCell(m.SaidaSobreEntradaPct.HasValue ? $"{m.SaidaSobreEntradaPct.Value:N1}%" : "-", true, 6, true);
                 prCell.Foreground = Brush.Parse("#1D4ED8");
                 r.Children.Add(prCell);
 
@@ -336,7 +344,7 @@ public sealed class ReportPreviewWindow : Window
                         xmlColor = "#15803D";
                     }
                 }
-                var xCell = CreateCell(xmlLbl, true, 6, true);
+                var xCell = CreateCell(xmlLbl, true, 7, true);
                 xCell.Foreground = Brush.Parse(xmlColor);
                 r.Children.Add(xCell);
 
@@ -355,8 +363,11 @@ public sealed class ReportPreviewWindow : Window
             tTot.Children.Add(CreateCell($"R$ {TaxIdValidator.FormatCentsBrl(v.OutrasEntradasCents)}", true, 2, true));
             tTot.Children.Add(CreateCell($"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", true, 3, true));
             tTot.Children.Add(CreateCell($"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", true, 4, true));
-            tTot.Children.Add(CreateCell(v.RatioSaidaSobreEntradaPct.HasValue ? $"{v.RatioSaidaSobreEntradaPct.Value:N1}%" : "-", true, 5, true));
-            var totX = CreateCell(_activeCtx.Audit is null ? "-" : $"{v.XmlComprasOmissas} falta(s)", true, 6, true);
+            var totSal = CreateCell(TaxIdValidator.FormatSignedCentsBrl(v.SaldoLiquidoCents), true, 5, true);
+            totSal.Foreground = Brush.Parse(v.SaldoLiquidoCents >= 0 ? "#15803D" : "#B91C1C");
+            tTot.Children.Add(totSal);
+            tTot.Children.Add(CreateCell(v.RatioSaidaSobreEntradaPct.HasValue ? $"{v.RatioSaidaSobreEntradaPct.Value:N1}%" : "-", true, 6, true));
+            var totX = CreateCell(_activeCtx.Audit is null ? "-" : $"{v.XmlComprasOmissas} falta(s)", true, 7, true);
             totX.Foreground = Brush.Parse(hasMissing ? "#B91C1C" : "#15803D");
             tTot.Children.Add(totX);
 
@@ -520,23 +531,27 @@ public sealed class ReportPreviewWindow : Window
         return tb;
     }
 
-    private static Border CreateSummaryCell(string label, string val, string bgHex, string fgHex, int col, bool rightBorder)
+    private static Border CreateSummaryCell(string label, string val, string bgHex, string fgHex, int col, bool rightBorder, string? subtitle = null)
     {
+        var sp = new StackPanel
+        {
+            Spacing = 3,
+            Children =
+            {
+                new TextBlock { Text = label, FontSize = 11, Foreground = Brush.Parse("#475569") },
+                new TextBlock { Text = val, FontSize = 14, FontWeight = FontWeight.Bold, Foreground = Brush.Parse(fgHex) }
+            }
+        };
+        if (!string.IsNullOrWhiteSpace(subtitle))
+            sp.Children.Add(new TextBlock { Text = subtitle, FontSize = 10, Foreground = Brush.Parse("#64748B") });
+
         var b = new Border
         {
             Background = Brush.Parse(bgHex),
             BorderBrush = Brush.Parse("#CBD5E1"),
             BorderThickness = new Thickness(0, 0, rightBorder ? 1 : 0, 0),
             Padding = new Thickness(12, 10),
-            Child = new StackPanel
-            {
-                Spacing = 4,
-                Children =
-                {
-                    new TextBlock { Text = label, FontSize = 11, Foreground = Brush.Parse("#475569") },
-                    new TextBlock { Text = val, FontSize = 14, FontWeight = FontWeight.Bold, Foreground = Brush.Parse(fgHex) }
-                }
-            }
+            Child = sp
         };
         Grid.SetColumn(b, col);
         return b;

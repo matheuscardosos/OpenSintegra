@@ -53,7 +53,7 @@ public sealed class MainWindow : Window
 
     // UI filters
     private string _docSearchFilter = "";
-    private string _docRegFilter = "50";
+    private string _docRegFilter = "ENT"; // "ENT" = Entradas Reg 50, "SAI50" = Saidas NF-e Reg 50, "61" = Cupons NFC-e Reg 61
     private string _auditFilter = "MISSING"; // Default: spotlight missing XML invoices!
     private string _diagFilter = "ALL";
     private string? _selectedCompanyCnpj;
@@ -839,22 +839,22 @@ public sealed class MainWindow : Window
         kpiGrid.Children.Add(cardSaidas);
 
         string ratioDisplay = _scoped.RatioSaidaSobreEntradaPct is double r ? $"{r:N1}%" : "-";
-        string entPctDisplay = _scoped.EntradasPctSobreSaidas is double ep ? $"{ep:N1}%" : "-";
         bool salesHigher = _scoped.TotalSaidasCents >= _scoped.TotalEntradasCents;
-        string diffPhrase = salesHigher ? "Saídas acima das entradas" : "Compras acima das saídas";
+        string diffBadge = salesHigher ? "Saídas > Entradas" : "Entradas > Saídas";
 
         string kpi3Sub = _audit is null
-            ? $"Compras equivalem a {entPctDisplay} das saídas"
+            ? $"Saídas equivalem a {ratioDisplay} das entradas"
             : _scoped.XmlComprasOmissas > 0
-                ? $"Faltam {_scoped.XmlComprasOmissas} nota(s) XML (R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)})"
-                : $"Compras equivalem a {entPctDisplay} das saídas | XML 100% lançado";
+                ? $"Saídas = {ratioDisplay} | Faltam {_scoped.XmlComprasOmissas} XML(s)"
+                : $"Saídas = {ratioDisplay} | XML 100% lançado";
 
         var cardRatio = BuildKpiCard(
-            VectorIcons.Scale, salesHigher ? "#16A34A" : "#D97706", salesHigher ? "#DCFCE7" : "#FEF3C7",
-            "Saídas sobre Entradas",
-            ratioDisplay,
+            VectorIcons.Scale, salesHigher ? "#16A34A" : "#DC2626", salesHigher ? "#DCFCE7" : "#FEE2E2",
+            "Saldo (Saídas - Entradas)",
+            TaxIdValidator.FormatSignedCentsBrl(_scoped.SaldoLiquidoCents),
             kpi3Sub,
-            (diffPhrase, salesHigher ? "#DCFCE7" : "#FEF3C7", salesHigher ? "#15803D" : "#B45309"));
+            (diffBadge, salesHigher ? "#DCFCE7" : "#FEE2E2", salesHigher ? "#15803D" : "#B91C1C"),
+            salesHigher ? "#15803D" : "#B91C1C");
         Grid.SetColumn(cardRatio, 4);
         kpiGrid.Children.Add(cardRatio);
 
@@ -980,7 +980,7 @@ public sealed class MainWindow : Window
         };
 
         var stack = new StackPanel();
-        string cols = "74,1*,0.9*,1*,1*,0.85*,1.3*";
+        string cols = "64,0.88*,0.74*,0.92*,0.92*,0.95*,0.62*,1.15*";
 
         var hdrGrid = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
         AddHeaderCell(hdrGrid, 0, "Mês", TextAlignment.Left);
@@ -988,8 +988,9 @@ public sealed class MainWindow : Window
         AddHeaderCell(hdrGrid, 2, "Outras Entr.", TextAlignment.Right);
         AddHeaderCell(hdrGrid, 3, "Total Entradas", TextAlignment.Right);
         AddHeaderCell(hdrGrid, 4, "Total Saídas", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 5, "Saídas / Entr.", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 6, "Conferência XML", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 5, "Saídas - Entr.", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 6, "S / E", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 7, "Conferência XML", TextAlignment.Right);
         stack.Children.Add(hdrGrid);
 
         if (rows.Count == 0)
@@ -1020,7 +1021,8 @@ public sealed class MainWindow : Window
             AddBodyCellFast(rowGrid, 2, $"R$ {TaxIdValidator.FormatCentsBrl(r.OutrasEntradasCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
             AddBodyCellFast(rowGrid, 3, $"R$ {TaxIdValidator.FormatCentsBrl(r.TotalEntradasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
             AddBodyCellFast(rowGrid, 4, $"R$ {TaxIdValidator.FormatCentsBrl(r.TotalSaidasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
-            AddBodyCellFast(rowGrid, 5, r.SaidaSobreEntradaPct is double p ? $"{p:N1}%" : "-", TextAlignment.Right, FontWeight.SemiBold, BrushBlueDark);
+            AddBodyCellFast(rowGrid, 5, TaxIdValidator.FormatSignedCentsBrl(r.SaldoLiquidoCents), TextAlignment.Right, FontWeight.SemiBold, r.SaldoLiquidoCents >= 0 ? BrushGreen : BrushRed);
+            AddBodyCellFast(rowGrid, 6, r.SaidaSobreEntradaPct is double p ? $"{p:N1}%" : "-", TextAlignment.Right, FontWeight.SemiBold, BrushBlueDark);
 
             string xmlTxt = "Sem XML";
             IBrush xmlBrush = BrushMuted;
@@ -1037,7 +1039,7 @@ public sealed class MainWindow : Window
                     xmlBrush = BrushGreen;
                 }
             }
-            AddBodyCellFast(rowGrid, 6, xmlTxt, TextAlignment.Right, FontWeight.SemiBold, xmlBrush);
+            AddBodyCellFast(rowGrid, 7, xmlTxt, TextAlignment.Right, FontWeight.SemiBold, xmlBrush);
 
             string ymClicked = r.YearMonth;
             rowGrid.Tapped += (_, _) => SelectPeriodInCombo(_selectedYearMonth == ymClicked ? "ALL" : ymClicked);
@@ -1214,13 +1216,32 @@ public sealed class MainWindow : Window
     {
         var root = new StackPanel { Spacing = 10 };
 
-        var controlsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        static string NormDocKey(string cnpj, string mod, string ser, string num) =>
+            $"{cnpj.Trim()}|{mod.Trim()}|{ser.Trim().TrimStart('0')}|{num.Trim().TrimStart('0')}";
+
+        var entradaDocs = _scoped.Reg50Docs.Where(r => TaxIdValidator.IsEntradaCfop(r.Cfop)).ToList();
+        var saida50Docs = _scoped.Reg50Docs.Where(r => !TaxIdValidator.IsEntradaCfop(r.Cfop)).ToList();
+
+        // Pre-index item counts O(1) so scrolling stays instant across large annual files
+        var reg54CountMap = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var it in _doc.Reg54)
+        {
+            string k = NormDocKey(it.Cnpj, it.Modelo, it.Serie, it.Numero);
+            reg54CountMap[k] = reg54CountMap.TryGetValue(k, out int cur) ? cur + 1 : 1;
+        }
+
+        var reg61RCountMap = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var r61r in _doc.Reg61R)
+            reg61RCountMap[r61r.MesAno] = reg61RCountMap.TryGetValue(r61r.MesAno, out int cur) ? cur + 1 : 1;
+
+        var controlsRow = new WrapPanel { Orientation = Orientation.Horizontal };
         var txtSearch = new TextBox
         {
             Watermark = "Buscar por número da NF, CNPJ, CFOP...",
             Text = _docSearchFilter,
-            Width = 300,
-            FontSize = 12
+            Width = 285,
+            FontSize = 12,
+            Margin = new Thickness(0, 0, 8, 4)
         };
 
         var lblCount = new TextBlock
@@ -1231,7 +1252,8 @@ public sealed class MainWindow : Window
         };
 
         controlsRow.Children.Add(txtSearch);
-        controlsRow.Children.Add(CreateFilterChip($"Notas Reg. 50 ({_scoped.Reg50Docs.Count})", _docRegFilter != "61", () => { _docRegFilter = "50"; RenderActiveSection(); }));
+        controlsRow.Children.Add(CreateFilterChip($"Entradas NF-e ({entradaDocs.Count})", _docRegFilter is not ("SAI50" or "61"), () => { _docRegFilter = "ENT"; RenderActiveSection(); }));
+        controlsRow.Children.Add(CreateFilterChip($"Saídas NF-e ({saida50Docs.Count})", _docRegFilter == "SAI50", () => { _docRegFilter = "SAI50"; RenderActiveSection(); }));
         controlsRow.Children.Add(CreateFilterChip($"Cupons NFC-e Reg. 61 ({_scoped.Reg61Docs.Count})", _docRegFilter == "61", () => { _docRegFilter = "61"; RenderActiveSection(); }));
         root.Children.Add(controlsRow);
 
@@ -1241,117 +1263,213 @@ public sealed class MainWindow : Window
                 ? _scoped.Reg61Docs.ToList()
                 : _scoped.Reg61Docs.Where(r =>
                     r.NumInicialOrdem.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                    r.NumFinalOrdem.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                    TaxIdValidator.FormatDateBr(r.DataEmissao).Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
                     r.DataEmissao.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
             var initial61 = Filter61();
-            lblCount.Text = $"Exibindo {initial61.Count} de {_scoped.Reg61Docs.Count} (clique para inspecionar)";
+            lblCount.Text = $"Exibindo {initial61.Count} de {_scoped.Reg61Docs.Count} dia(s) (clique para ver itens do mês)";
 
             var cols61 = new[]
             {
-                new GridLength(60), new GridLength(90), new GridLength(60),
-                new GridLength(95), new GridLength(95),
-                new GridLength(1, GridUnitType.Star), new GridLength(1, GridUnitType.Star)
+                new GridLength(50), new GridLength(86), new GridLength(46),
+                new GridLength(86), new GridLength(86),
+                new GridLength(1, GridUnitType.Star), new GridLength(0.9, GridUnitType.Star), new GridLength(128)
             };
-            var listBox61 = CreateVirtualizedListBox<Reg61>(
-                initial61,
-                cols61,
-                (g, r61) =>
+
+            string emptyMsg61 = "Nenhum cupom fiscal / NFC-e (Registro 61) neste período.";
+            Control body61;
+            if (initial61.Count == 0)
+            {
+                body61 = new Border
                 {
-                    AddBodyCellFast(g, 0, r61.Line.ToString(), TextAlignment.Right, FontWeight.Normal, BrushMuted);
-                    AddBodyCellFast(g, 1, TaxIdValidator.FormatDateBr(r61.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
-                    AddBodyCellFast(g, 2, r61.Modelo, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                    AddBodyCellFast(g, 3, r61.NumInicialOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
-                    AddBodyCellFast(g, 4, r61.NumFinalOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
-                    AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
-                    AddBodyCellFast(g, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                    BorderBrush = BrushBorderLight,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(14),
+                    Child = new TextBlock { Text = emptyMsg61, FontSize = 12.5, Foreground = BrushMuted, TextWrapping = TextWrapping.Wrap }
+                };
+            }
+            else
+            {
+                var listBox61 = CreateVirtualizedListBox<Reg61>(
+                    initial61,
+                    cols61,
+                    (g, r61) =>
+                    {
+                        string mmYyyy = r61.DataEmissao.Length >= 6 ? $"{r61.DataEmissao[4..6]}{r61.DataEmissao[..4]}" : "";
+                        int prodCnt = reg61RCountMap.TryGetValue(mmYyyy, out int mc) ? mc : 0;
+
+                        AddBodyCellFast(g, 0, r61.Line.ToString(), TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                        AddBodyCellFast(g, 1, TaxIdValidator.FormatDateBr(r61.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
+                        AddBodyCellFast(g, 2, r61.Modelo, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                        AddBodyCellFast(g, 3, r61.NumInicialOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
+                        AddBodyCellFast(g, 4, r61.NumFinalOrdem.TrimStart('0').PadLeft(1, '0'), TextAlignment.Right, FontWeight.Normal, BrushTextBody);
+                        AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushGreen);
+                        AddBodyCellFast(g, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r61.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
+
+                        var btnItens = new Button
+                        {
+                            Content = prodCnt > 0 ? $"Itens mês ({prodCnt})" : "Ver mês",
+                            FontSize = 10.5,
+                            FontWeight = FontWeight.SemiBold,
+                            Background = Brush.Parse(prodCnt > 0 ? "#EFF6FF" : "#F1F5F9"),
+                            BorderBrush = Brush.Parse(prodCnt > 0 ? "#93C5FD" : "#CBD5E1"),
+                            BorderThickness = new Thickness(1),
+                            Foreground = Brush.Parse(prodCnt > 0 ? "#1D4ED8" : "#475569"),
+                            Padding = new Thickness(8, 3),
+                            Margin = new Thickness(4, 2),
+                            CornerRadius = new CornerRadius(4),
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+                        btnItens.Click += (_, _) => OpenCouponMonthDetails(r61);
+                        Grid.SetColumn(btnItens, 7);
+                        g.Children.Add(btnItens);
+
+                        g.Cursor = HandCursor;
+                        g.Tapped += (_, e) => { e.Handled = true; OpenCouponMonthDetails(r61); };
+                    },
+                    listHeight: 455);
+
+                txtSearch.TextChanged += (_, _) =>
+                {
+                    string next = txtSearch.Text ?? "";
+                    if (string.Equals(next, _docSearchFilter, StringComparison.Ordinal)) return;
+                    _docSearchFilter = next;
+                    var updated = Filter61();
+                    listBox61.ItemsSource = updated;
+                    lblCount.Text = $"Exibindo {updated.Count} de {_scoped.Reg61Docs.Count} dia(s) (clique para ver itens do mês)";
+                };
+
+                body61 = WrapWithHeader(cols61, hdr =>
+                {
+                    AddHeaderCell(hdr, 0, "Linha", TextAlignment.Right);
+                    AddHeaderCell(hdr, 1, "Data", TextAlignment.Left);
+                    AddHeaderCell(hdr, 2, "Mod", TextAlignment.Left);
+                    AddHeaderCell(hdr, 3, "Cupom Ini.", TextAlignment.Right);
+                    AddHeaderCell(hdr, 4, "Cupom Fim", TextAlignment.Right);
+                    AddHeaderCell(hdr, 5, "Valor Total", TextAlignment.Right);
+                    AddHeaderCell(hdr, 6, "Valor ICMS", TextAlignment.Right);
+                    AddHeaderCell(hdr, 7, "Itens (Reg. 61R)", TextAlignment.Center);
+                }, listBox61);
+            }
+
+            var card61 = CreateCardShell("Cupons Fiscais / NFC-e (Resumo Diário - Registro 61)", VectorIcons.DocumentText, lblCount);
+            ((StackPanel)card61.Child!).Children.Add(body61);
+            root.Children.Add(card61);
+            return root;
+        }
+
+        bool isSaidaView = _docRegFilter == "SAI50";
+        var source50 = isSaidaView ? saida50Docs : entradaDocs;
+
+        List<Reg50> Filter50() => string.IsNullOrWhiteSpace(_docSearchFilter)
+            ? source50
+            : source50.Where(r =>
+                r.Numero.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                r.Cnpj.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                TaxIdValidator.FormatDateBr(r.DataEmissao).Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                r.Cfop.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        var initial50 = Filter50();
+        lblCount.Text = $"Exibindo {initial50.Count} de {source50.Count} (clique na nota para ver os itens)";
+
+        var cols50 = new[]
+        {
+            new GridLength(82), new GridLength(1.15, GridUnitType.Star),
+            new GridLength(40), new GridLength(72), new GridLength(52), new GridLength(36),
+            new GridLength(0.95, GridUnitType.Star), new GridLength(0.85, GridUnitType.Star), new GridLength(36), new GridLength(104)
+        };
+
+        Control body50;
+        if (source50.Count == 0)
+        {
+            string emptyMsg = isSaidaView
+                ? "Nenhuma NF-e de saída (modelo 55/01 com CFOP 5xxx/6xxx/7xxx) foi lançada neste período. Se a empresa vendeu apenas para consumidor final, as saídas ficam em 'Cupons NFC-e Reg. 61'."
+                : "Nenhuma NF-e de entrada (CFOP 1xxx/2xxx/3xxx) encontrada neste período.";
+            body50 = new Border
+            {
+                BorderBrush = BrushBorderLight,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(14),
+                Child = new TextBlock { Text = emptyMsg, FontSize = 12.5, Foreground = BrushMuted, TextWrapping = TextWrapping.Wrap }
+            };
+        }
+        else
+        {
+            var listBox50 = CreateVirtualizedListBox<Reg50>(
+                initial50,
+                cols50,
+                (g, r50) =>
+                {
+                    int itemCnt = reg54CountMap.TryGetValue(NormDocKey(r50.Cnpj, r50.Modelo, r50.Serie, r50.Numero), out int cnt) ? cnt : 0;
+
+                    AddBodyCellFast(g, 0, TaxIdValidator.FormatDateBr(r50.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
+                    AddBodyCellFast(g, 1, TaxIdValidator.FormatCnpj(r50.Cnpj), TextAlignment.Left, FontWeight.Normal, BrushTextBody);
+                    AddBodyCellFast(g, 2, r50.Modelo, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    AddBodyCellFast(g, 3, r50.Numero.TrimStart('0').PadLeft(1, '0'), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
+                    AddBodyCellFast(g, 4, r50.Cfop, TextAlignment.Left, FontWeight.SemiBold, isSaidaView ? BrushGreen : BrushBlueDark);
+                    AddBodyCellFast(g, 5, r50.Uf, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    AddBodyCellFast(g, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
+                    AddBodyCellFast(g, 7, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
+                    AddBodyCellFast(g, 8, r50.Situacao, TextAlignment.Left, FontWeight.SemiBold, r50.Situacao == "S" ? BrushRed : BrushTextBody);
+
+                    var btnItens = new Button
+                    {
+                        Content = itemCnt > 0 ? $"Itens ({itemCnt})" : "Resumo",
+                        FontSize = 10.5,
+                        FontWeight = FontWeight.SemiBold,
+                        Background = Brush.Parse(itemCnt > 0 ? "#EFF6FF" : "#F1F5F9"),
+                        BorderBrush = Brush.Parse(itemCnt > 0 ? "#93C5FD" : "#CBD5E1"),
+                        BorderThickness = new Thickness(1),
+                        Foreground = Brush.Parse(itemCnt > 0 ? "#1D4ED8" : "#475569"),
+                        Padding = new Thickness(8, 3),
+                        Margin = new Thickness(4, 2),
+                        CornerRadius = new CornerRadius(4),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    btnItens.Click += (_, _) => OpenInvoiceDetails(r50);
+                    Grid.SetColumn(btnItens, 9);
+                    g.Children.Add(btnItens);
+
                     g.Cursor = HandCursor;
-                    g.Tapped += (_, e) => { e.Handled = true; InspectLineAt(r61.Line); };
+                    g.Tapped += (_, e) => { e.Handled = true; OpenInvoiceDetails(r50); };
                 },
-                listHeight: 460);
+                listHeight: 455);
 
             txtSearch.TextChanged += (_, _) =>
             {
                 string next = txtSearch.Text ?? "";
                 if (string.Equals(next, _docSearchFilter, StringComparison.Ordinal)) return;
                 _docSearchFilter = next;
-                var updated = Filter61();
-                listBox61.ItemsSource = updated;
-                lblCount.Text = $"Exibindo {updated.Count} de {_scoped.Reg61Docs.Count} (clique para inspecionar)";
+                var updated = Filter50();
+                listBox50.ItemsSource = updated;
+                lblCount.Text = $"Exibindo {updated.Count} de {source50.Count} (clique na nota para ver os itens)";
             };
 
-            var card61 = CreateCardShell("Cupons Fiscais / NFC-e (Registro 61)", VectorIcons.DocumentText, lblCount);
-            ((StackPanel)card61.Child!).Children.Add(WrapWithHeader(cols61, hdr =>
+            body50 = WrapWithHeader(cols50, hdr =>
             {
-                AddHeaderCell(hdr, 0, "Linha", TextAlignment.Right);
-                AddHeaderCell(hdr, 1, "Data", TextAlignment.Left);
+                AddHeaderCell(hdr, 0, "Data", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, isSaidaView ? "CNPJ Destinatário" : "CNPJ Fornecedor", TextAlignment.Left);
                 AddHeaderCell(hdr, 2, "Mod", TextAlignment.Left);
-                AddHeaderCell(hdr, 3, "Ordem Ini.", TextAlignment.Right);
-                AddHeaderCell(hdr, 4, "Ordem Fim", TextAlignment.Right);
-                AddHeaderCell(hdr, 5, "Valor Total", TextAlignment.Right);
-                AddHeaderCell(hdr, 6, "Valor ICMS", TextAlignment.Right);
-            }, listBox61));
-            root.Children.Add(card61);
-            return root;
+                AddHeaderCell(hdr, 3, "Número", TextAlignment.Left);
+                AddHeaderCell(hdr, 4, "CFOP", TextAlignment.Left);
+                AddHeaderCell(hdr, 5, "UF", TextAlignment.Left);
+                AddHeaderCell(hdr, 6, "Valor Total", TextAlignment.Right);
+                AddHeaderCell(hdr, 7, "ICMS", TextAlignment.Right);
+                AddHeaderCell(hdr, 8, "Sit.", TextAlignment.Left);
+                AddHeaderCell(hdr, 9, "Detalhes", TextAlignment.Center);
+            }, listBox50);
         }
 
-        List<Reg50> Filter50() => string.IsNullOrWhiteSpace(_docSearchFilter)
-            ? _scoped.Reg50Docs.ToList()
-            : _scoped.Reg50Docs.Where(r =>
-                r.Numero.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
-                r.Cnpj.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase) ||
-                r.Cfop.Contains(_docSearchFilter, StringComparison.OrdinalIgnoreCase)).ToList();
-
-        var initial50 = Filter50();
-        lblCount.Text = $"Exibindo {initial50.Count} de {_scoped.Reg50Docs.Count} (clique na NF para ver itens e detalhes)";
-
-        var cols50 = new[]
-        {
-            new GridLength(85), new GridLength(1.25, GridUnitType.Star),
-            new GridLength(45), new GridLength(76), new GridLength(55), new GridLength(44),
-            new GridLength(1.0, GridUnitType.Star), new GridLength(0.95, GridUnitType.Star), new GridLength(48)
-        };
-        var listBox50 = CreateVirtualizedListBox<Reg50>(
-            initial50,
-            cols50,
-            (g, r50) =>
-            {
-                AddBodyCellFast(g, 0, TaxIdValidator.FormatDateBr(r50.DataEmissao), TextAlignment.Left, FontWeight.Normal, BrushTextDark);
-                AddBodyCellFast(g, 1, TaxIdValidator.FormatCnpj(r50.Cnpj), TextAlignment.Left, FontWeight.Normal, BrushTextBody);
-                AddBodyCellFast(g, 2, r50.Modelo, TextAlignment.Left, FontWeight.Normal, BrushMuted);
-                AddBodyCellFast(g, 3, r50.Numero.TrimStart('0').PadLeft(1, '0'), TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
-                AddBodyCellFast(g, 4, r50.Cfop, TextAlignment.Left, FontWeight.SemiBold, TaxIdValidator.IsEntradaCfop(r50.Cfop) ? BrushBlueDark : BrushGreen);
-                AddBodyCellFast(g, 5, r50.Uf, TextAlignment.Left, FontWeight.Normal, BrushMuted);
-                AddBodyCellFast(g, 6, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
-                AddBodyCellFast(g, 7, $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorIcmsCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
-                AddBodyCellFast(g, 8, r50.Situacao, TextAlignment.Left, FontWeight.SemiBold, r50.Situacao == "S" ? BrushRed : BrushTextBody);
-                g.Cursor = HandCursor;
-                g.Tapped += (_, e) => { e.Handled = true; OpenInvoiceDetails(r50); };
-            },
-            listHeight: 460);
-
-        txtSearch.TextChanged += (_, _) =>
-        {
-            string next = txtSearch.Text ?? "";
-            if (string.Equals(next, _docSearchFilter, StringComparison.Ordinal)) return;
-            _docSearchFilter = next;
-            var updated = Filter50();
-            listBox50.ItemsSource = updated;
-            lblCount.Text = $"Exibindo {updated.Count} de {_scoped.Reg50Docs.Count} (clique na NF para ver itens e detalhes)";
-        };
-
-        var card50 = CreateCardShell("Notas Fiscais Lançadas (Registro 50)", VectorIcons.DocumentText, lblCount);
-        ((StackPanel)card50.Child!).Children.Add(WrapWithHeader(cols50, hdr =>
-        {
-            AddHeaderCell(hdr, 0, "Data", TextAlignment.Left);
-            AddHeaderCell(hdr, 1, "CNPJ Emit./Dest.", TextAlignment.Left);
-            AddHeaderCell(hdr, 2, "Mod", TextAlignment.Left);
-            AddHeaderCell(hdr, 3, "Número", TextAlignment.Left);
-            AddHeaderCell(hdr, 4, "CFOP", TextAlignment.Left);
-            AddHeaderCell(hdr, 5, "UF", TextAlignment.Left);
-            AddHeaderCell(hdr, 6, "Valor Total", TextAlignment.Right);
-            AddHeaderCell(hdr, 7, "ICMS", TextAlignment.Right);
-            AddHeaderCell(hdr, 8, "Sit.", TextAlignment.Left);
-        }, listBox50));
+        string cardTitle = isSaidaView
+            ? "Notas Fiscais de Saída NF-e (Registro 50)"
+            : "Notas Fiscais de Entrada NF-e (Registro 50)";
+        var card50 = CreateCardShell(cardTitle, VectorIcons.DocumentText, lblCount);
+        ((StackPanel)card50.Child!).Children.Add(body50);
         root.Children.Add(card50);
         return root;
     }
@@ -1671,28 +1789,31 @@ public sealed class MainWindow : Window
             {
                 var tbl = new Border { BorderBrush = BrushBorderLight, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4) };
                 var rows = new StackPanel();
-                string cols = "80,1*,0.9*,1*,1*,75,1.2*";
+                string cols = "76,0.9*,0.78*,0.92*,0.92*,0.95*,68,1.15*";
                 var hdr = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
                 AddHeaderCell(hdr, 0, "Mês", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, "Compras", TextAlignment.Right);
                 AddHeaderCell(hdr, 2, "Outras", TextAlignment.Right);
                 AddHeaderCell(hdr, 3, "Entradas", TextAlignment.Right);
                 AddHeaderCell(hdr, 4, "Saídas", TextAlignment.Right);
-                AddHeaderCell(hdr, 5, "Saída/Entr.", TextAlignment.Right);
-                AddHeaderCell(hdr, 6, "Arquivo Origem", TextAlignment.Left);
+                AddHeaderCell(hdr, 5, "Saídas - Entr.", TextAlignment.Right);
+                AddHeaderCell(hdr, 6, "S / E", TextAlignment.Right);
+                AddHeaderCell(hdr, 7, "Arquivo Origem", TextAlignment.Left);
                 rows.Children.Add(hdr);
 
                 int idx = 0;
                 foreach (var t in timeline)
                 {
+                    long saldoT = t.TotalSaidasCents - t.TotalEntradasCents;
                     var g = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = idx++ % 2 == 0 ? Brushes.White : Brush.Parse("#F8FAFC") };
                     AddBodyCellFast(g, 0, t.MonthLabel, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
                     AddBodyCellFast(g, 1, $"R$ {TaxIdValidator.FormatCentsBrl(t.ComprasCents)}", TextAlignment.Right, FontWeight.Normal, BrushTextBody);
                     AddBodyCellFast(g, 2, $"R$ {TaxIdValidator.FormatCentsBrl(t.OutrasEntradasCents)}", TextAlignment.Right, FontWeight.Normal, BrushMuted);
                     AddBodyCellFast(g, 3, $"R$ {TaxIdValidator.FormatCentsBrl(t.TotalEntradasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
                     AddBodyCellFast(g, 4, $"R$ {TaxIdValidator.FormatCentsBrl(t.TotalSaidasCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushTextDark);
-                    AddBodyCellFast(g, 5, t.RatioPct is double rp ? $"{rp:N1}%" : "-", TextAlignment.Right, FontWeight.SemiBold, BrushBlueDark);
-                    AddBodyCellFast(g, 6, t.SourceFileName, TextAlignment.Left, FontWeight.Normal, BrushMuted);
+                    AddBodyCellFast(g, 5, TaxIdValidator.FormatSignedCentsBrl(saldoT), TextAlignment.Right, FontWeight.SemiBold, saldoT >= 0 ? BrushGreen : BrushRed);
+                    AddBodyCellFast(g, 6, t.RatioPct is double rp ? $"{rp:N1}%" : "-", TextAlignment.Right, FontWeight.SemiBold, BrushBlueDark);
+                    AddBodyCellFast(g, 7, t.SourceFileName, TextAlignment.Left, FontWeight.Normal, BrushMuted);
                     rows.Children.Add(new Border { BorderBrush = BrushBorderLight, BorderThickness = new Thickness(0, 1, 0, 0), Child = g });
                 }
                 tbl.Child = rows;
@@ -2114,6 +2235,12 @@ public sealed class MainWindow : Window
         win.ShowDialog(this);
     }
 
+    private void OpenCouponMonthDetails(Reg61 couponDay)
+    {
+        var win = new CouponMonthDetailsWindow(couponDay, _doc);
+        win.ShowDialog(this);
+    }
+
     private void InspectLineAt(int lineNumber, int startCol = 1, int endCol = 2)
     {
         if (lineNumber < 1 || lineNumber > _doc.Lines.Count) return;
@@ -2314,7 +2441,8 @@ public sealed class MainWindow : Window
         string label,
         string bigValue,
         string subText,
-        (string Text, string BgHex, string FgHex)? badge)
+        (string Text, string BgHex, string FgHex)? badge,
+        string? bigValueHex = null)
     {
         var card = new Border
         {
@@ -2343,7 +2471,7 @@ public sealed class MainWindow : Window
         col.Children.Add(new TextBlock { Text = label, FontSize = 12, Foreground = Brush.Parse("#475569") });
 
         var valRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        valRow.Children.Add(new TextBlock { Text = bigValue, FontSize = 21, FontWeight = FontWeight.Bold, Foreground = BrushTextDark });
+        valRow.Children.Add(new TextBlock { Text = bigValue, FontSize = 20, FontWeight = FontWeight.Bold, Foreground = bigValueHex is not null ? Brush.Parse(bigValueHex) : BrushTextDark });
         if (badge is { } b)
         {
             valRow.Children.Add(new Border

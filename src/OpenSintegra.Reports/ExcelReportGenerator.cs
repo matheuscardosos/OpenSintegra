@@ -68,6 +68,7 @@ public static class ExcelReportGenerator
         AddKv("Outras Entradas (Devolução / Bonif. / etc.)", v.OutrasEntradasCents / 100m, BrlFormat);
         AddKv("Total de Entradas no Sintegra", v.TotalEntradasCents / 100m, BrlFormat, true);
         AddKv("Total de Saídas / Vendas no Sintegra", v.TotalSaidasCents / 100m, BrlFormat, true);
+        AddKv("Saldo (Saídas - Entradas)", v.SaldoLiquidoCents / 100m, BrlFormat, true);
         AddKv("Relação Saídas / Entradas", (v.RatioSaidaSobreEntradaPct ?? 0) / 100.0, "0.0%", true);
 
         if (ctx.Audit is not null)
@@ -88,7 +89,7 @@ public static class ExcelReportGenerator
         string[] headers =
         [
             "Mês", "Compras", "Outras Entradas", "Total Entradas",
-            "Saídas Reg 50", "Saídas NFC-e (61)", "Total Saídas", "Saídas / Entradas", "Notas XML Faltantes", "Valor Não Lançado"
+            "Saídas Reg 50", "Saídas NFC-e (61)", "Total Saídas", "Saldo (Saídas - Entradas)", "Saídas / Entradas", "Notas XML Faltantes", "Valor Não Lançado"
         ];
         WriteTableHeader(ws, headers);
 
@@ -106,19 +107,22 @@ public static class ExcelReportGenerator
             ws.Cell(r, 5).Value = m.SaidasReg50Cents / 100m;
             ws.Cell(r, 6).Value = m.SaidasReg61Cents / 100m;
             ws.Cell(r, 7).Value = m.TotalSaidasCents / 100m;
-            ws.Cell(r, 8).Value = (m.SaidaSobreEntradaPct ?? 0) / 100.0;
-            ws.Cell(r, 9).Value = missing;
-            ws.Cell(r, 10).Value = missingVal / 100m;
+            ws.Cell(r, 8).FormulaA1 = $"=G{r}-D{r}";
+            ws.Cell(r, 9).Value = (m.SaidaSobreEntradaPct ?? 0) / 100.0;
+            ws.Cell(r, 10).Value = missing;
+            ws.Cell(r, 11).Value = missingVal / 100m;
 
-            for (int c = 2; c <= 7; c++)
+            for (int c = 2; c <= 8; c++)
                 ws.Cell(r, c).Style.NumberFormat.Format = BrlFormat;
-            ws.Cell(r, 8).Style.NumberFormat.Format = "0.0%";
-            ws.Cell(r, 10).Style.NumberFormat.Format = BrlFormat;
+            ws.Cell(r, 8).Style.Font.Bold = true;
+            ws.Cell(r, 8).Style.Font.FontColor = m.SaldoLiquidoCents >= 0 ? XLColor.FromHtml("#15803D") : XLColor.FromHtml("#B91C1C");
+            ws.Cell(r, 9).Style.NumberFormat.Format = "0.0%";
+            ws.Cell(r, 11).Style.NumberFormat.Format = BrlFormat;
             if (missing > 0)
             {
-                ws.Cell(r, 9).Style.Font.FontColor = XLColor.FromHtml("#B91C1C");
-                ws.Cell(r, 9).Style.Font.Bold = true;
                 ws.Cell(r, 10).Style.Font.FontColor = XLColor.FromHtml("#B91C1C");
+                ws.Cell(r, 10).Style.Font.Bold = true;
+                ws.Cell(r, 11).Style.Font.FontColor = XLColor.FromHtml("#B91C1C");
             }
             r++;
         }
@@ -126,17 +130,17 @@ public static class ExcelReportGenerator
         if (r > 2)
         {
             ws.Cell(r, 1).Value = "TOTAL";
-            for (int c = 2; c <= 7; c++)
+            for (int c = 2; c <= 8; c++)
             {
                 string col = XLHelper.GetColumnLetterFromNumber(c);
                 ws.Cell(r, c).FormulaA1 = $"=SUM({col}2:{col}{r - 1})";
                 ws.Cell(r, c).Style.NumberFormat.Format = BrlFormat;
             }
-            ws.Cell(r, 8).FormulaA1 = $"=IF(D{r}>0,G{r}/D{r},0)";
-            ws.Cell(r, 8).Style.NumberFormat.Format = "0.0%";
-            ws.Cell(r, 9).FormulaA1 = $"=SUM(I2:I{r - 1})";
+            ws.Cell(r, 9).FormulaA1 = $"=IF(D{r}>0,G{r}/D{r},0)";
+            ws.Cell(r, 9).Style.NumberFormat.Format = "0.0%";
             ws.Cell(r, 10).FormulaA1 = $"=SUM(J2:J{r - 1})";
-            ws.Cell(r, 10).Style.NumberFormat.Format = BrlFormat;
+            ws.Cell(r, 11).FormulaA1 = $"=SUM(K2:K{r - 1})";
+            ws.Cell(r, 11).Style.NumberFormat.Format = BrlFormat;
             ws.Row(r).Style.Font.Bold = true;
             ws.Row(r).Style.Fill.BackgroundColor = XLColor.FromHtml("#EFF6FF");
         }

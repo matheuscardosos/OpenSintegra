@@ -37,11 +37,12 @@ public sealed class InvoiceDetailsWindow : Window
         foreach (var p in doc.Reg75)
             r75Map.TryAdd(p.CodProduto, p);
 
+        static string NormKey(string cnpj, string mod, string ser, string num) =>
+            $"{cnpj.Trim()}|{mod.Trim()}|{ser.Trim().TrimStart('0')}|{num.Trim().TrimStart('0')}";
+
+        string targetKey = NormKey(invoice.Cnpj, invoice.Modelo, invoice.Serie, invoice.Numero);
         var items = doc.Reg54
-            .Where(i => i.Cnpj == invoice.Cnpj &&
-                        i.Modelo == invoice.Modelo &&
-                        i.Serie == invoice.Serie &&
-                        i.Numero == invoice.Numero)
+            .Where(i => NormKey(i.Cnpj, i.Modelo, i.Serie, i.Numero) == targetKey)
             .OrderBy(i => i.NumItem, StringComparer.Ordinal)
             .ToList();
 

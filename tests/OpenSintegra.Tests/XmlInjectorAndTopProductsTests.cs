@@ -157,4 +157,30 @@ public sealed class XmlInjectorAndTopProductsTests
             try { File.Delete(dbPath); } catch { }
         }
     }
+
+    [Fact]
+    public void PeriodFilter_SeparatesEntradaAndSaidaReg50_AndComputesSaldo()
+    {
+        var sb = new StringBuilder();
+        sb.Append(SintegraFixtureBuilder.Reg10("11222333000181", "ISENTO", "EMPRESA SALDO TESTE", "20260101", "20260131")).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg11()).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg50("00000000000191", "20260110", "000100", "1102", 40_000, "T")).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg50("00000000000191", "20260115", "000200", "5102", 75_000, "P")).Append("\r\n");
+        sb.Append(SintegraFixtureBuilder.Reg90("11222333000181", "ISENTO", ("50", 2), ("99", 5))).Append("\r\n");
+
+        var doc = SintegraParser.ParseBytes(Encoding.Latin1.GetBytes(sb.ToString()));
+        var rep = SintegraValidator.Validate(doc);
+        var view = PeriodFilter.CreateScopedView(doc, rep, null, "ALL");
+
+        var entradas = view.Reg50Docs.Where(r => TaxIdValidator.IsEntradaCfop(r.Cfop)).ToList();
+        var saidasNfe = view.Reg50Docs.Where(r => !TaxIdValidator.IsEntradaCfop(r.Cfop)).ToList();
+
+        Assert.Single(entradas);
+        Assert.Single(saidasNfe);
+        Assert.Equal("000100", entradas[0].Numero);
+        Assert.Equal("000200", saidasNfe[0].Numero);
+        Assert.Equal(40_000L, view.TotalEntradasCents);
+        Assert.Equal(75_000L, view.TotalSaidasCents);
+        Assert.Equal(35_000L, view.SaldoLiquidoCents);
+    }
 }

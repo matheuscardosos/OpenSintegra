@@ -339,6 +339,9 @@ public static class TaxIdValidator
         return val.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
     }
 
+    public static string FormatSignedCentsBrl(long cents) =>
+        cents < 0 ? $"- R$ {FormatCentsBrl(-cents)}" : $"R$ {FormatCentsBrl(cents)}";
+
     public static string FormatMilliBr(long milli)
     {
         decimal val = milli / 1000.0m;

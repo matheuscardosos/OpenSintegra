@@ -10,10 +10,10 @@ internal static class SintegraFixtureBuilder
     public static string Reg11() =>
         $"11{"RUA BARAO DO RIO BRANCO",-34}00100{"SALA 2",-22}{"CENTRO",-15}79002000{"CONTADOR RESPONSAVEL",-28}067330011220";
 
-    public static string Reg50(string cnpj, string ymd, string numero6, string cfop, long valCents)
+    public static string Reg50(string cnpj, string ymd, string numero6, string cfop, long valCents, string emitente = "T")
     {
         long icms = valCents * 12 / 100;
-        return $"50{cnpj,-14}{"ISENTO",-14}{ymd}MS55001{numero6}{cfop}T{valCents:0000000000000}{valCents:0000000000000}{icms:0000000000000}{0:0000000000000}{0:0000000000000}1200N";
+        return $"50{cnpj,-14}{"ISENTO",-14}{ymd}MS55001{numero6}{cfop}{emitente}{valCents:0000000000000}{valCents:0000000000000}{icms:0000000000000}{0:0000000000000}{0:0000000000000}1200N";
     }
 
     public static string Reg54(string cnpj, string numero6, string cfop, string itemNum3, string codProd, long valCents) =>

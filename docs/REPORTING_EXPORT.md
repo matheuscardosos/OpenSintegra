@@ -9,8 +9,8 @@ Todos os relatórios respeitam integralmente o filtro ativo na tela ou no parâm
 Produz documento formato **A4 (`595 x 842 pt`)** com múltiplas páginas automáticas em três modos (`Completo`, `SomenteNotasNaoLancadas` e `ProdutosMaisVendidos`):
 - **Cabeçalho Institucional:** Monograma vetorial OpenSintegra Contábil, título do relatório e período filtrado.
 - **Identificação da Empresa:** Razão Social, CNPJ formatado, Inscrição Estadual, Regime Tributário e Convênio ICMS 57/95.
-- **Resumo do Período (4 Blocos KPI):** Total de Entradas, Total de Saídas (Vendas), Saídas / Entradas e Compras Não Lançadas (XML).
-- **Movimentação Mês a Mês:** Tabela zebrada exibindo `Compras`, `Outras Entr.`, `Total Entradas`, `Total Saídas`, `Saídas / Entr.`, `Conferência XML` e linha consolidada de Total.
+- **Resumo do Período (4 Blocos KPI):** Total de Entradas, Total de Saídas (Vendas), Saldo (`Saídas - Entradas` em R$ com proporção S/E) e Compras Não Lançadas (XML).
+- **Movimentação Mês a Mês:** Tabela zebrada exibindo `Compras`, `Outras Entradas`, `Total Entradas`, `Total Saídas`, `Saídas - Entradas` (R$), `S / E` (%), `Conferência XML` e linha consolidada de Total.
 - **Notas Fiscais de Compra Não Lançadas:** Listagem em linguagem simples com mês, emissão, número da NF, fornecedor e valor faltante para envio ao cliente.
 - **Produtos Mais Vendidos (Top 40):** Ranking por valor movimentado com código, descrição (`Reg 75`), unidade, quantidade, total vendido e participação percentual.
 
@@ -20,8 +20,8 @@ Gera arquivo `.xlsx` contendo **8 planilhas organizadas e estilizadas**:
 
 | Aba | Conteúdo Principal |
 | --- | ------------------ |
-| `Resumo Executivo` | Dados cadastrais da empresa, período avaliado, regime tributário e totais consolidados |
-| `Movimentação Mensal` | Evolução mensal completa com totais calculados via fórmula dinâmica `SUM(...)` e proporção S/E |
+| `Resumo Executivo` | Dados cadastrais da empresa, período avaliado, regime tributário, totais e saldo (`Saídas - Entradas`) |
+| `Movimentação Mensal` | Evolução mensal completa com saldo calculado via fórmula dinâmica (`=G{linha}-D{linha}`), `SUM(...)` e proporção S/E |
 | `Produtos Mais Vendidos` | Ranking de mercadorias movimentadas com quantidade, total vendido e participação (%) |
 | `Apuração por CFOP` | Sumarização contábil e tributária (Valor Contábil, Base ICMS, ICMS, Isentas, Outras) |
 | `Notas Reg 50` | Listagem das notas fiscais (Registro 50) presentes no escopo selecionado |
