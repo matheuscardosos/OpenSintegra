@@ -54,10 +54,10 @@ public static class PeriodFilter
         bool isFiltered = !string.IsNullOrWhiteSpace(yearMonthFilter) && yearMonthFilter != "ALL";
 
         string periodLabel = isFiltered
-            ? $"Competencia {TaxIdValidator.FormatMonthLabel(yearMonthFilter!)}"
+            ? $"Competência {TaxIdValidator.FormatMonthLabel(yearMonthFilter!)}"
             : (doc.Reg10 is { } r10
                 ? $"{TaxIdValidator.FormatDateBr(r10.DataInicial)} a {TaxIdValidator.FormatDateBr(r10.DataFinal)}"
-                : "Periodo completo");
+                : "Período completo");
 
         var reg50Scoped = isFiltered
             ? doc.Reg50.Where(r => r.DataEmissao.StartsWith(yearMonthFilter!, StringComparison.Ordinal)).ToList()
@@ -179,7 +179,7 @@ public static class PeriodFilter
 
             var comp = xmlRows.Where(r => r.Category == XmlOperationCategory.CompraComercial).ToList();
             xCompTot = comp.Count;
-            xCompLanc = comp.Count(r => r.MatchStatus == "Lancada OK");
+            xCompLanc = comp.Count(r => r.MatchStatus == "Lançada OK");
             var omissas = comp.Where(r => r.MatchStatus == "OMISSA NO SINTEGRA").ToList();
             xCompOmiss = omissas.Count;
             xCompOmissCents = omissas.Sum(r => r.XmlValorCents);

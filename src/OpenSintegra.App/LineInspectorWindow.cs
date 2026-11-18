@@ -99,7 +99,7 @@ public sealed class LineInspectorWindow : Window
             Child = headerGrid
         };
         headerGrid.Children.Add(CreateCell("Colunas", true, 0));
-        headerGrid.Children.Add(CreateCell("Campo (Convenio ICMS 57/95)", true, 1));
+        headerGrid.Children.Add(CreateCell("Campo (Convênio ICMS 57/95)", true, 1));
         headerGrid.Children.Add(CreateCell("Valor Leitura", true, 2));
         headerGrid.Children.Add(CreateCell("No Arquivo (Bruto)", true, 3));
         fieldsList.Children.Add(headerBorder);

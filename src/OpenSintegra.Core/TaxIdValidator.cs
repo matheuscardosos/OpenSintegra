@@ -274,10 +274,10 @@ public static class TaxIdValidator
         {
             '1' => "Entrada Estadual",
             '2' => "Entrada Interestadual",
-            '3' => "Entrada Exterior / Importacao",
-            '5' => "Saida Estadual",
-            '6' => "Saida Interestadual",
-            '7' => "Saida Exterior / Exportacao",
+            '3' => "Entrada Exterior / Importação",
+            '5' => "Saída Estadual",
+            '6' => "Saída Interestadual",
+            '7' => "Saída Exterior / Exportação",
             _ => "Outros"
         };
     }

@@ -146,7 +146,7 @@ public sealed class MonthlyBarChartControl : Control
         if (_hoveredIndex >= 0 && _hoveredIndex < _rows.Count)
         {
             var hr = _rows[_hoveredIndex];
-            string tip = $"{hr.MonthLabel}  |  Entradas: R$ {TaxIdValidator.FormatCentsBrl(hr.TotalEntradasCents)}  |  Saidas: R$ {TaxIdValidator.FormatCentsBrl(hr.TotalSaidasCents)}";
+            string tip = $"{hr.MonthLabel}  |  Entradas: R$ {TaxIdValidator.FormatCentsBrl(hr.TotalEntradasCents)}  |  Saídas: R$ {TaxIdValidator.FormatCentsBrl(hr.TotalSaidasCents)}";
             var ftTip = new FormattedText(tip, CultureInfo.GetCultureInfo("pt-BR"), FlowDirection.LeftToRight, typeface, 11, DarkTextBrush);
             double tx = Math.Clamp(leftPad + _hoveredIndex * slotW, leftPad, leftPad + plotW - ftTip.Width - 16);
             var tipRect = new Rect(tx, 2, ftTip.Width + 14, 22);

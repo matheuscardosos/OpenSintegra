@@ -94,7 +94,7 @@ public sealed class MainWindow : Window
 
     public MainWindow(string? initialFilePath = null, string? initialAuditXmlPath = null)
     {
-        Title = $"OpenSintegra Contabil v{AppVersion}";
+        Title = $"OpenSintegra Contábil v{AppVersion}";
         Icon = VectorIcons.AppWindowIcon;
         Width = 1340;
         Height = 840;
@@ -193,7 +193,7 @@ public sealed class MainWindow : Window
         miAbrirSped.Click += async (_, _) => await PickAndOpenSpedAsync();
         var miSalvar = new MenuItem { Header = "Salvar Sintegra (.txt)..." };
         miSalvar.Click += async (_, _) => await SaveCurrentBytesDialogAsync();
-        var miDividir = new MenuItem { Header = "Dividir Sintegra Anual por Mes..." };
+        var miDividir = new MenuItem { Header = "Dividir Sintegra Anual por Mês..." };
         miDividir.Click += async (_, _) => await ExportMonthlySplitsDialogAsync();
         var miSair = new MenuItem { Header = "Sair" };
         miSair.Click += (_, _) => Close();
@@ -207,7 +207,7 @@ public sealed class MainWindow : Window
         mArquivo.Items.Add(miSair);
 
         var mFiscal = new MenuItem { Header = "Fiscal" };
-        var miLancar = new MenuItem { Header = "Lancar Notas Faltantes no Sintegra..." };
+        var miLancar = new MenuItem { Header = "Lançar Notas Faltantes no Sintegra..." };
         miLancar.Click += async (_, _) => await OpenInjectMissingDialogAsync(null);
         var miAutoFix = new MenuItem { Header = "Corrigir Erros Estruturais (Auto-Fix)" };
         miAutoFix.Click += async (_, _) => await RunQuickFixAndRefreshAsync();
@@ -217,10 +217,10 @@ public sealed class MainWindow : Window
         mFiscal.Items.Add(miAutoFix);
         mFiscal.Items.Add(miCfop);
 
-        var mRel = new MenuItem { Header = "Relatorios" };
-        var miPrevComp = new MenuItem { Header = "Visualizar Relatorio Completo (Entradas x Saidas)..." };
+        var mRel = new MenuItem { Header = "Relatórios" };
+        var miPrevComp = new MenuItem { Header = "Visualizar Relatório Completo (Entradas x Saídas)..." };
         miPrevComp.Click += (_, _) => OpenReportPreview(ReportMode.Completo);
-        var miPrevMiss = new MenuItem { Header = "Relatorio de Notas Nao Lancadas (Para Cliente)..." };
+        var miPrevMiss = new MenuItem { Header = "Relatório de Notas Não Lançadas (Para Cliente)..." };
         miPrevMiss.Click += (_, _) => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas);
         var miPrevProd = new MenuItem { Header = "Ranking de Produtos Mais Vendidos..." };
         miPrevProd.Click += (_, _) => OpenReportPreview(ReportMode.ProdutosMaisVendidos);
@@ -238,13 +238,13 @@ public sealed class MainWindow : Window
         var mAjuda = new MenuItem { Header = "Ajuda" };
         var miDemo = new MenuItem { Header = "Carregar Dados de Exemplo (Teste)" };
         miDemo.Click += (_, _) => LoadDemoExample();
-        var miConfig = new MenuItem { Header = "Configuracoes e Limite SQLite" };
+        var miConfig = new MenuItem { Header = "Configurações e Limite SQLite" };
         miConfig.Click += (_, _) => NavigateTo(NavSection.EmpresasEBanco);
         var miSobre = new MenuItem { Header = "Sobre" };
         miSobre.Click += async (_, _) => await ShowInfoDialogAsync(
-            "OpenSintegra Contabil",
-            $"OpenSintegra Contabil v{AppVersion} (Licenca MIT)\n\n" +
-            "Validacao, correcao, lancamento de notas XML faltantes e relatorios gerenciais do Sintegra.");
+            "OpenSintegra Contábil",
+            $"OpenSintegra Contábil v{AppVersion} (Licença MIT)\n\n" +
+            "Validação, correção, lançamento de notas XML faltantes e relatórios gerenciais do Sintegra.");
         mAjuda.Items.Add(miConfig);
         mAjuda.Items.Add(miDemo);
         mAjuda.Items.Add(new Separator());
@@ -274,15 +274,15 @@ public sealed class MainWindow : Window
         strip.Children.Add(CreateRibbonButton("Abrir", "Sintegra", VectorIcons.FolderOpen, "#2563EB", async () => await PickAndOpenSintegraAsync()));
         strip.Children.Add(CreateRibbonButton("Carregar", "XML / ZIP", VectorIcons.UploadZip, "#0284C7", async () => await PickAndOpenXmlAsync()));
         strip.Children.Add(CreateToolbarDivider());
-        strip.Children.Add(CreateRibbonButton("Lancar", "Faltantes", VectorIcons.CheckBadge, "#16A34A", async () => await OpenInjectMissingDialogAsync(null)));
+        strip.Children.Add(CreateRibbonButton("Lançar", "Faltantes", VectorIcons.CheckBadge, "#16A34A", async () => await OpenInjectMissingDialogAsync(null)));
         strip.Children.Add(CreateRibbonButton("Corrigir", "Sintegra", VectorIcons.Wrench, "#D97706", async () => await RunQuickFixAndRefreshAsync()));
         strip.Children.Add(CreateToolbarDivider());
 
-        var btnRel = CreateRibbonButton("Relatorios", "PDF / Excel", VectorIcons.DocumentText, "#2563EB", null);
+        var btnRel = CreateRibbonButton("Relatórios", "PDF / Excel", VectorIcons.DocumentText, "#2563EB", null);
         var relFlyout = new MenuFlyout();
-        var fComp = new MenuItem { Header = "Visualizar Relatorio Completo (Entradas x Saidas)..." };
+        var fComp = new MenuItem { Header = "Visualizar Relatório Completo (Entradas x Saídas)..." };
         fComp.Click += (_, _) => OpenReportPreview(ReportMode.Completo);
-        var fMiss = new MenuItem { Header = "Visualizar Somente Notas Nao Lancadas..." };
+        var fMiss = new MenuItem { Header = "Visualizar Somente Notas Não Lançadas..." };
         fMiss.Click += (_, _) => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas);
         var fProd = new MenuItem { Header = "Visualizar Produtos Mais Vendidos..." };
         fProd.Click += (_, _) => OpenReportPreview(ReportMode.ProdutosMaisVendidos);
@@ -355,7 +355,7 @@ public sealed class MainWindow : Window
         var rootGrid = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
         var navStack = new StackPanel { Spacing = 5 };
 
-        navStack.Children.Add(CreateNavButton(NavSection.VisaoGeral, "Visao Geral", VectorIcons.Home, true));
+        navStack.Children.Add(CreateNavButton(NavSection.VisaoGeral, "Visão Geral", VectorIcons.Home, true));
         navStack.Children.Add(CreateNavButton(NavSection.NotasFaltantes, "Notas Faltantes (XML)", VectorIcons.Warning, false, _badgeFaltantes));
         navStack.Children.Add(CreateNavButton(NavSection.NotasFiscais, "Notas Fiscais", VectorIcons.DocumentText, false));
         navStack.Children.Add(CreateNavButton(NavSection.CfopEProdutos, "CFOP e Produtos", VectorIcons.ChartBar, false));
@@ -377,7 +377,7 @@ public sealed class MainWindow : Window
                 Spacing = 2,
                 Children =
                 {
-                    new TextBlock { Text = "Convenio ICMS 57/95", FontSize = 11.5, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark },
+                    new TextBlock { Text = "Convênio ICMS 57/95", FontSize = 11.5, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark },
                     new TextBlock { Text = $"OpenSintegra v{AppVersion} MIT", FontSize = 10.5, Foreground = BrushMuted }
                 }
             }
@@ -481,7 +481,7 @@ public sealed class MainWindow : Window
         };
         periodPanel.Children.Add(new TextBlock
         {
-            Text = "Competencia:",
+            Text = "Competência:",
             FontSize = 12,
             Foreground = Brush.Parse("#475569"),
             VerticalAlignment = VerticalAlignment.Center
@@ -642,7 +642,7 @@ public sealed class MainWindow : Window
 
         _cmbPeriod.Items.Add(new ComboBoxItem
         {
-            Content = $"{fullLabel} (Todos - {_report.MonthlyBalance.Count} mes(es))",
+            Content = $"{fullLabel} (Todos - {_report.MonthlyBalance.Count} mês(es))",
             Tag = "ALL"
         });
 
@@ -679,8 +679,8 @@ public sealed class MainWindow : Window
     {
         if (!_hasDocument)
         {
-            _hdrCompanyName.Text = "OpenSintegra Contabil";
-            _hdrCompanyDocs.Text = "Abra um arquivo Sintegra (.txt) e o ZIP/pasta de XMLs para conferir entradas x saidas.";
+            _hdrCompanyName.Text = "OpenSintegra Contábil";
+            _hdrCompanyDocs.Text = "Abra um arquivo Sintegra (.txt) e o ZIP/pasta de XMLs para conferir entradas x saídas.";
             _hdrStatusPill.Background = Brush.Parse("#F1F5F9");
             _hdrStatusText.Foreground = BrushMuted;
             _hdrStatusText.Text = "Aguardando arquivo";
@@ -711,13 +711,13 @@ public sealed class MainWindow : Window
             {
                 _hdrStatusPill.Background = Brush.Parse("#DCFCE7");
                 _hdrStatusText.Foreground = BrushGreen;
-                _hdrStatusText.Text = $"Sintegra valido ({warn} avisos)";
+                _hdrStatusText.Text = $"Sintegra válido ({warn} avisos)";
             }
             else
             {
                 _hdrStatusPill.Background = Brush.Parse("#DCFCE7");
                 _hdrStatusText.Foreground = BrushGreen;
-                _hdrStatusText.Text = "Sintegra valido";
+                _hdrStatusText.Text = "Sintegra válido";
             }
 
             _btnSalvarAlteracoes.IsVisible = _hasUnsavedChanges;
@@ -726,7 +726,7 @@ public sealed class MainWindow : Window
             _badgeFaltantes.Text = missingCount > 0 ? missingCount.ToString() : "";
             _badgeFaltantes.IsVisible = missingCount > 0;
 
-            _statusLeftText.Text = $"Arquivo: {_currentFileName}  |  Periodo: {_scoped.PeriodLabel}  |  {_doc.Reg50.Count} NF Reg.50  |  {_doc.Reg61.Count} Reg.61";
+            _statusLeftText.Text = $"Arquivo: {_currentFileName}  |  Período: {_scoped.PeriodLabel}  |  {_doc.Reg50.Count} NF Reg.50  |  {_doc.Reg61.Count} Reg.61";
         }
 
         var stats = _db.GetStorageStats();
@@ -780,7 +780,7 @@ public sealed class MainWindow : Window
 
     private Control BuildWelcomeView()
     {
-        var card = CreateCardShell("Bem-vindo ao OpenSintegra Contabil", VectorIcons.FolderOpen, null);
+        var card = CreateCardShell("Bem-vindo ao OpenSintegra Contábil", VectorIcons.FolderOpen, null);
         var stack = (StackPanel)card.Child!;
         stack.Spacing = 12;
         stack.Margin = new Thickness(0, 8, 0, 8);
@@ -788,9 +788,9 @@ public sealed class MainWindow : Window
         stack.Children.Add(new TextBlock
         {
             Text = "Importe seu arquivo Sintegra (.txt mensal ou anual) e opcionalmente o pacote ZIP/pasta com os XMLs de compras para:\n" +
-                   "  - Comparar Entradas x Saidas mes a mes em linguagem simples para o escritorio e o cliente;\n" +
-                   "  - Descobrir exatamente quais notas fiscais de compra ficaram sem lancamento e em quais meses;\n" +
-                   "  - Lancar as notas XML faltantes diretamente no Sintegra e salvar o arquivo pronto e validado.",
+                   "  - Comparar Entradas x Saídas mês a mês em linguagem simples para o escritório e o cliente;\n" +
+                   "  - Descobrir exatamente quais notas fiscais de compra ficaram sem lançamento e em quais meses;\n" +
+                   "  - Lançar as notas XML faltantes diretamente no Sintegra e salvar o arquivo pronto e validado.",
             FontSize = 13,
             Foreground = BrushTextBody,
             TextWrapping = TextWrapping.Wrap,
@@ -831,7 +831,7 @@ public sealed class MainWindow : Window
 
         var cardSaidas = BuildKpiCard(
             VectorIcons.ArrowUp, "#16A34A", "#DCFCE7",
-            "Saidas / Vendas no Sintegra",
+            "Saídas / Vendas no Sintegra",
             $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}",
             saidasDetail,
             null);
@@ -841,17 +841,17 @@ public sealed class MainWindow : Window
         string ratioDisplay = _scoped.RatioSaidaSobreEntradaPct is double r ? $"{r:N1}%" : "-";
         string entPctDisplay = _scoped.EntradasPctSobreSaidas is double ep ? $"{ep:N1}%" : "-";
         bool salesHigher = _scoped.TotalSaidasCents >= _scoped.TotalEntradasCents;
-        string diffPhrase = salesHigher ? "Saidas acima das entradas" : "Compras acima das saidas";
+        string diffPhrase = salesHigher ? "Saídas acima das entradas" : "Compras acima das saídas";
 
         string kpi3Sub = _audit is null
-            ? $"Compras equivalem a {entPctDisplay} das saidas"
+            ? $"Compras equivalem a {entPctDisplay} das saídas"
             : _scoped.XmlComprasOmissas > 0
                 ? $"Faltam {_scoped.XmlComprasOmissas} nota(s) XML (R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)})"
-                : $"Compras equivalem a {entPctDisplay} das saidas | XML 100% lancado";
+                : $"Compras equivalem a {entPctDisplay} das saídas | XML 100% lançado";
 
         var cardRatio = BuildKpiCard(
             VectorIcons.Scale, salesHigher ? "#16A34A" : "#D97706", salesHigher ? "#DCFCE7" : "#FEF3C7",
-            "Saidas sobre Entradas",
+            "Saídas sobre Entradas",
             ratioDisplay,
             kpi3Sub,
             (diffPhrase, salesHigher ? "#DCFCE7" : "#FEF3C7", salesHigher ? "#15803D" : "#B45309"));
@@ -865,14 +865,14 @@ public sealed class MainWindow : Window
         var leftCol = new StackPanel { Spacing = 12 };
 
         var chartsRow = new Grid { ColumnDefinitions = new ColumnDefinitions("1.42*,12,*") };
-        var barCard = CreateCardShell("Evolucao Mensal: Entradas vs Saidas", VectorIcons.ChartBar, BuildBarLegend());
+        var barCard = CreateCardShell("Evolução Mensal: Entradas vs Saídas", VectorIcons.ChartBar, BuildBarLegend());
         var barChart = new MonthlyBarChartControl { Height = 190 };
         barChart.SetData(_report.MonthlyBalance.ToList(), _scoped.IsSingleMonthFilter ? _scoped.SelectedYearMonth : null);
         ((StackPanel)barCard.Child!).Children.Add(barChart);
         Grid.SetColumn(barCard, 0);
         chartsRow.Children.Add(barCard);
 
-        var donutCard = CreateCardShell("Proporcao do Periodo", VectorIcons.ChartBar, null);
+        var donutCard = CreateCardShell("Proporção do Período", VectorIcons.ChartBar, null);
         var donutChart = new CompositionDonutControl { Width = 136, Height = 136 };
         donutChart.SetData(_scoped.TotalEntradasCents, _scoped.TotalSaidasCents);
 
@@ -890,7 +890,7 @@ public sealed class MainWindow : Window
         double entShare = totMov > 0 ? (_scoped.TotalEntradasCents * 100.0 / totMov) : 0;
 
         var legendStack = new StackPanel { Spacing = 12, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        legendStack.Children.Add(CreateDonutLegendItem("#16A34A", "Saidas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}", $"({saiShare:N1}%)"));
+        legendStack.Children.Add(CreateDonutLegendItem("#16A34A", "Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}", $"({saiShare:N1}%)"));
         legendStack.Children.Add(CreateDonutLegendItem("#2563EB", "Entradas", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalEntradasCents)}", $"({entShare:N1}%)"));
         Grid.SetColumn(legendStack, 1);
         donutLayout.Children.Add(legendStack);
@@ -902,7 +902,7 @@ public sealed class MainWindow : Window
         leftCol.Children.Add(chartsRow);
 
         // Monthly Entradas x Saidas x XML Faltantes Table
-        var tableCard = CreateCardShell("Entradas e Saidas por Mes", VectorIcons.DocumentText, BuildMonthlyFilterHintBadge());
+        var tableCard = CreateCardShell("Entradas e Saídas por Mês", VectorIcons.DocumentText, BuildMonthlyFilterHintBadge());
         ((StackPanel)tableCard.Child!).Children.Add(BuildMonthlyComparisonTable(_scoped.MonthlyRows));
         leftCol.Children.Add(tableCard);
 
@@ -911,7 +911,7 @@ public sealed class MainWindow : Window
 
         // Right Sidebar inside Dashboard: Focused Pendencias + Direct Client Action
         var rightCol = new StackPanel { Spacing = 12 };
-        var alertsCard = CreateCardShell("Situacao e Pendencias", VectorIcons.Warning, null);
+        var alertsCard = CreateCardShell("Situação e Pendências", VectorIcons.Warning, null);
         var alertsBody = (StackPanel)alertsCard.Child!;
 
         if (_audit is null)
@@ -919,7 +919,7 @@ public sealed class MainWindow : Window
             alertsBody.Children.Add(CreateAlertItem(
                 false,
                 "Conferir XMLs de compras",
-                "Carregue o ZIP ou pasta de XMLs para verificar quais notas nao estao lancadas.",
+                "Carregue o ZIP ou pasta de XMLs para verificar quais notas não estão lançadas.",
                 async () => await PickAndOpenXmlAsync()));
         }
         else if (_scoped.XmlComprasOmissas > 0)
@@ -927,16 +927,16 @@ public sealed class MainWindow : Window
             int distinctMonthsWithGaps = _scoped.XmlDocumentRows.Where(r => r.IsCriticalGap).Select(r => r.YearMonth).Distinct().Count();
             alertsBody.Children.Add(CreateAlertItem(
                 true,
-                $"{_scoped.XmlComprasOmissas} nota(s) nao lancada(s)",
-                $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)} em {distinctMonthsWithGaps} mes(es). Clique para ver e lancar.",
+                $"{_scoped.XmlComprasOmissas} nota(s) não lançada(s)",
+                $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)} em {distinctMonthsWithGaps} mês(es). Clique para ver e lançar.",
                 () => NavigateTo(NavSection.NotasFaltantes)));
         }
         else
         {
             alertsBody.Children.Add(CreateAlertItem(
                 false,
-                "Entradas 100% lancadas",
-                "Todas as compras dos XMLs do periodo estao no Sintegra.",
+                "Entradas 100% lançadas",
+                "Todas as compras dos XMLs do período estão no Sintegra.",
                 () => NavigateTo(NavSection.NotasFaltantes)));
         }
 
@@ -945,20 +945,20 @@ public sealed class MainWindow : Window
         alertsBody.Children.Add(CreateAlertItem(
             errCount > 0,
             errCount > 0 ? $"{errCount} erro(s) estruturais no Sintegra" : $"Sintegra estrutural OK ({warnCount} avisos)",
-            errCount > 0 ? "Clique para corrigir automaticamente." : "Arquivo pronto para validacao ou divisao mensal.",
+            errCount > 0 ? "Clique para corrigir automaticamente." : "Arquivo pronto para validação ou divisão mensal.",
             () => NavigateTo(NavSection.CorrecaoEExportacao)));
 
         rightCol.Children.Add(alertsCard);
 
-        var actionsCard = CreateCardShell("Relatorio para o Cliente", VectorIcons.DocumentText, null);
+        var actionsCard = CreateCardShell("Relatório para o Cliente", VectorIcons.DocumentText, null);
         var actionsBody = (StackPanel)actionsCard.Child!;
         actionsBody.Spacing = 7;
-        actionsBody.Children.Add(CreateQuickActionButton("Relatorio Completo (Entradas x Saidas)", VectorIcons.DocumentText, () => OpenReportPreview(ReportMode.Completo)));
-        actionsBody.Children.Add(CreateQuickActionButton("Somente Notas Nao Lancadas", VectorIcons.Warning, () => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas)));
+        actionsBody.Children.Add(CreateQuickActionButton("Relatório Completo (Entradas x Saídas)", VectorIcons.DocumentText, () => OpenReportPreview(ReportMode.Completo)));
+        actionsBody.Children.Add(CreateQuickActionButton("Somente Notas Não Lançadas", VectorIcons.Warning, () => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas)));
         if (_scoped.TopSellingProducts.Count > 0)
             actionsBody.Children.Add(CreateQuickActionButton("Ranking Produtos Mais Vendidos", VectorIcons.ChartBar, () => OpenReportPreview(ReportMode.ProdutosMaisVendidos)));
         if (_scoped.XmlComprasOmissas > 0)
-            actionsBody.Children.Add(CreatePrimaryButton($"Lancar {_scoped.XmlComprasOmissas} Faltante(s) no Sintegra", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null)));
+            actionsBody.Children.Add(CreatePrimaryButton($"Lançar {_scoped.XmlComprasOmissas} Faltante(s) no Sintegra", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null)));
 
         rightCol.Children.Add(actionsCard);
 
@@ -983,20 +983,20 @@ public sealed class MainWindow : Window
         string cols = "74,1*,0.9*,1*,1*,0.85*,1.3*";
 
         var hdrGrid = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
-        AddHeaderCell(hdrGrid, 0, "Mes", TextAlignment.Left);
+        AddHeaderCell(hdrGrid, 0, "Mês", TextAlignment.Left);
         AddHeaderCell(hdrGrid, 1, "Compras", TextAlignment.Right);
         AddHeaderCell(hdrGrid, 2, "Outras Entr.", TextAlignment.Right);
         AddHeaderCell(hdrGrid, 3, "Total Entradas", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 4, "Total Saidas", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 5, "Saidas / Entr.", TextAlignment.Right);
-        AddHeaderCell(hdrGrid, 6, "Conferencia XML", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 4, "Total Saídas", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 5, "Saídas / Entr.", TextAlignment.Right);
+        AddHeaderCell(hdrGrid, 6, "Conferência XML", TextAlignment.Right);
         stack.Children.Add(hdrGrid);
 
         if (rows.Count == 0)
         {
             stack.Children.Add(new TextBlock
             {
-                Text = "Sem movimentacao mensal para o periodo selecionado.",
+                Text = "Sem movimentação mensal para o período selecionado.",
                 Margin = new Thickness(12),
                 Foreground = BrushMuted,
                 FontSize = 12
@@ -1033,7 +1033,7 @@ public sealed class MainWindow : Window
                 }
                 else
                 {
-                    xmlTxt = "Todas lancadas";
+                    xmlTxt = "Todas lançadas";
                     xmlBrush = BrushGreen;
                 }
             }
@@ -1068,13 +1068,13 @@ public sealed class MainWindow : Window
 
         if (_audit is not null && _scoped.XmlComprasOmissas > 0)
         {
-            var btnInjectAll = CreatePrimaryButton($"Lancar Todas as Faltantes no Sintegra ({_scoped.XmlComprasOmissas})", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null));
+            var btnInjectAll = CreatePrimaryButton($"Lançar Todas as Faltantes no Sintegra ({_scoped.XmlComprasOmissas})", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null));
             btnInjectAll.Margin = new Thickness(10, 0, 0, 0);
             Grid.SetColumn(btnInjectAll, 1);
             topBar.Children.Add(btnInjectAll);
         }
 
-        var btnExportMissPdf = CreateQuickActionButton("Relatorio de Notas Nao Lancadas", VectorIcons.DocumentText, () => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas));
+        var btnExportMissPdf = CreateQuickActionButton("Relatório de Notas Não Lançadas", VectorIcons.DocumentText, () => OpenReportPreview(ReportMode.SomenteNotasNaoLancadas));
         btnExportMissPdf.HorizontalAlignment = HorizontalAlignment.Right;
         Grid.SetColumn(btnExportMissPdf, 3);
         topBar.Children.Add(btnExportMissPdf);
@@ -1085,7 +1085,7 @@ public sealed class MainWindow : Window
             var empty = CreateCardShell("Confronto com XMLs de Compra", VectorIcons.UploadZip, null);
             ((StackPanel)empty.Child!).Children.Add(new TextBlock
             {
-                Text = "Carregue o pacote ZIP ou a pasta com os arquivos XML das notas fiscais para listar exatamente quais notas nao foram lancadas no Sintegra, em quais meses elas ocorreram, e lanca-las diretamente no arquivo.",
+                Text = "Carregue o pacote ZIP ou a pasta com os arquivos XML das notas fiscais para listar exatamente quais notas não foram lançadas no Sintegra, em quais meses elas ocorreram, e lançá-las diretamente no arquivo.",
                 FontSize = 12.5,
                 Foreground = BrushTextBody,
                 TextWrapping = TextWrapping.Wrap
@@ -1097,8 +1097,8 @@ public sealed class MainWindow : Window
         // KPI Summary Row
         var sumGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*,10,*,10,*") };
         var s1 = BuildSmallStatBox("Notas de Compra nos XMLs", _scoped.XmlComprasTotal.ToString(), "#0F172A");
-        var s2 = BuildSmallStatBox("Ja Lancadas no Sintegra", _scoped.XmlComprasLancadas.ToString(), "#15803D");
-        var s3 = BuildSmallStatBox("Nao Lancadas (Faltantes)", _scoped.XmlComprasOmissas.ToString(), _scoped.XmlComprasOmissas > 0 ? "#DC2626" : "#15803D");
+        var s2 = BuildSmallStatBox("Já Lançadas no Sintegra", _scoped.XmlComprasLancadas.ToString(), "#15803D");
+        var s3 = BuildSmallStatBox("Não Lançadas (Faltantes)", _scoped.XmlComprasOmissas.ToString(), _scoped.XmlComprasOmissas > 0 ? "#DC2626" : "#15803D");
         var s4 = BuildSmallStatBox("Valor Total Faltante", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)}", _scoped.XmlComprasOmissasCents > 0 ? "#DC2626" : "#15803D");
         Grid.SetColumn(s1, 0);
         Grid.SetColumn(s2, 2);
@@ -1114,7 +1114,7 @@ public sealed class MainWindow : Window
         var gapsByMonth = _audit.MonthlyCoverage.Where(m => m.XmlComprasOmissas > 0).ToList();
         if (gapsByMonth.Count > 0)
         {
-            var monthCard = CreateCardShell("Meses com Notas Faltantes (clique no mes para filtrar)", VectorIcons.Warning, null);
+            var monthCard = CreateCardShell("Meses com Notas Faltantes (clique no mês para filtrar)", VectorIcons.Warning, null);
             var wp = new WrapPanel { Margin = new Thickness(0, 2) };
             foreach (var mg in gapsByMonth)
             {
@@ -1130,7 +1130,7 @@ public sealed class MainWindow : Window
 
         // Filter Chips
         var filterRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        filterRow.Children.Add(CreateFilterChip($"Somente Nao Lancadas ({_scoped.XmlComprasOmissas})", _auditFilter == "MISSING", () => { _auditFilter = "MISSING"; RenderActiveSection(); }));
+        filterRow.Children.Add(CreateFilterChip($"Somente Não Lançadas ({_scoped.XmlComprasOmissas})", _auditFilter == "MISSING", () => { _auditFilter = "MISSING"; RenderActiveSection(); }));
         filterRow.Children.Add(CreateFilterChip($"Todas as Notas XML ({_scoped.XmlDocumentRows.Count})", _auditFilter == "ALL", () => { _auditFilter = "ALL"; RenderActiveSection(); }));
         root.Children.Add(filterRow);
 
@@ -1140,7 +1140,7 @@ public sealed class MainWindow : Window
 
         var listCard = CreateCardShell(
             _auditFilter == "MISSING"
-                ? $"Notas Fiscais de Compra Nao Lancadas ({rows.Count})"
+                ? $"Notas Fiscais de Compra Não Lançadas ({rows.Count})"
                 : $"Todos os Documentos Analisados ({rows.Count})",
             VectorIcons.DocumentText, null);
         var listStack = (StackPanel)listCard.Child!;
@@ -1157,13 +1157,13 @@ public sealed class MainWindow : Window
             cols,
             hdr =>
             {
-                AddHeaderCell(hdr, 0, "Mes", TextAlignment.Left);
-                AddHeaderCell(hdr, 1, "Emissao", TextAlignment.Left);
-                AddHeaderCell(hdr, 2, "NF / Serie", TextAlignment.Left);
+                AddHeaderCell(hdr, 0, "Mês", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, "Emissão", TextAlignment.Left);
+                AddHeaderCell(hdr, 2, "NF / Série", TextAlignment.Left);
                 AddHeaderCell(hdr, 3, "Fornecedor", TextAlignment.Left);
                 AddHeaderCell(hdr, 4, "Status", TextAlignment.Left);
                 AddHeaderCell(hdr, 5, "Valor XML", TextAlignment.Right);
-                AddHeaderCell(hdr, 6, "Acao", TextAlignment.Center);
+                AddHeaderCell(hdr, 6, "Ação", TextAlignment.Center);
             },
             (g, d) =>
             {
@@ -1179,7 +1179,7 @@ public sealed class MainWindow : Window
                 {
                     var btnOne = new Button
                     {
-                        Content = "Lancar NF",
+                        Content = "Lançar NF",
                         FontSize = 11,
                         FontWeight = FontWeight.SemiBold,
                         Background = Brush.Parse("#2563EB"),
@@ -1199,7 +1199,7 @@ public sealed class MainWindow : Window
                 }
             },
             emptyMessage: _auditFilter == "MISSING"
-                ? "Excelente! Nenhuma nota fiscal de compra faltante neste periodo."
+                ? "Excelente! Nenhuma nota fiscal de compra faltante neste período."
                 : "Nenhum documento XML neste filtro.",
             listHeight: 400);
 
@@ -1217,7 +1217,7 @@ public sealed class MainWindow : Window
         var controlsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var txtSearch = new TextBox
         {
-            Watermark = "Buscar por numero da NF, CNPJ, CFOP...",
+            Watermark = "Buscar por número da NF, CNPJ, CFOP...",
             Text = _docSearchFilter,
             Width = 300,
             FontSize = 12
@@ -1339,13 +1339,13 @@ public sealed class MainWindow : Window
             lblCount.Text = $"Exibindo {updated.Count} de {_scoped.Reg50Docs.Count} (clique na NF para ver itens e detalhes)";
         };
 
-        var card50 = CreateCardShell("Notas Fiscais Lancadas (Registro 50)", VectorIcons.DocumentText, lblCount);
+        var card50 = CreateCardShell("Notas Fiscais Lançadas (Registro 50)", VectorIcons.DocumentText, lblCount);
         ((StackPanel)card50.Child!).Children.Add(WrapWithHeader(cols50, hdr =>
         {
             AddHeaderCell(hdr, 0, "Data", TextAlignment.Left);
             AddHeaderCell(hdr, 1, "CNPJ Emit./Dest.", TextAlignment.Left);
             AddHeaderCell(hdr, 2, "Mod", TextAlignment.Left);
-            AddHeaderCell(hdr, 3, "Numero", TextAlignment.Left);
+            AddHeaderCell(hdr, 3, "Número", TextAlignment.Left);
             AddHeaderCell(hdr, 4, "CFOP", TextAlignment.Left);
             AddHeaderCell(hdr, 5, "UF", TextAlignment.Left);
             AddHeaderCell(hdr, 6, "Valor Total", TextAlignment.Right);
@@ -1376,7 +1376,7 @@ public sealed class MainWindow : Window
             hdr =>
             {
                 AddHeaderCell(hdr, 0, "#", TextAlignment.Left);
-                AddHeaderCell(hdr, 1, "Codigo", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, "Código", TextAlignment.Left);
                 AddHeaderCell(hdr, 2, "Produto (Registro 75)", TextAlignment.Left);
                 AddHeaderCell(hdr, 3, "Un.", TextAlignment.Left);
                 AddHeaderCell(hdr, 4, "Qtd. Vendida", TextAlignment.Right);
@@ -1394,7 +1394,7 @@ public sealed class MainWindow : Window
                 AddBodyCellFast(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(p.ValorTotalCents)}", TextAlignment.Right, FontWeight.SemiBold, BrushGreen);
                 AddBodyCellFast(g, 6, $"{p.SharePct:N1}%", TextAlignment.Right, FontWeight.Normal, BrushMuted);
             },
-            emptyMessage: "Nenhum resumo mensal de itens vendidos (Reg. 61R ou Reg. 54 de saida) encontrado neste arquivo.",
+            emptyMessage: "Nenhum resumo mensal de itens vendidos (Reg. 61R ou Reg. 54 de saída) encontrado neste arquivo.",
             listHeight: 280));
         root.Children.Add(prodCard);
 
@@ -1406,9 +1406,9 @@ public sealed class MainWindow : Window
         string cols = "65,1.4*,60,1*,1*,1*,1*,1*";
         var hdrCfop = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
         AddHeaderCell(hdrCfop, 0, "CFOP", TextAlignment.Left);
-        AddHeaderCell(hdrCfop, 1, "Natureza da Operacao", TextAlignment.Left);
+        AddHeaderCell(hdrCfop, 1, "Natureza da Operação", TextAlignment.Left);
         AddHeaderCell(hdrCfop, 2, "Notas", TextAlignment.Right);
-        AddHeaderCell(hdrCfop, 3, "Vlr. Contabil", TextAlignment.Right);
+        AddHeaderCell(hdrCfop, 3, "Vlr. Contábil", TextAlignment.Right);
         AddHeaderCell(hdrCfop, 4, "Base ICMS", TextAlignment.Right);
         AddHeaderCell(hdrCfop, 5, "Valor ICMS", TextAlignment.Right);
         AddHeaderCell(hdrCfop, 6, "Isentas", TextAlignment.Right);
@@ -1446,13 +1446,13 @@ public sealed class MainWindow : Window
     {
         var root = new StackPanel { Spacing = 12 };
 
-        var fixCard = CreateCardShell("Correcao Automatica, Inclusao de Faltantes e Exportacao", VectorIcons.Wrench, null);
+        var fixCard = CreateCardShell("Correção Automática, Inclusão de Faltantes e Exportação", VectorIcons.Wrench, null);
         var stack = (StackPanel)fixCard.Child!;
         stack.Spacing = 10;
 
         stack.Children.Add(new TextBlock
         {
-            Text = "Corrige quebras CRLF, alinhamento de 126 colunas, notas canceladas, produtos Reg. 75 (incluindo Reg. 61R), ordenacao de itens Reg. 54 e totalizadores do Reg. 90.",
+            Text = "Corrige quebras CRLF, alinhamento de 126 colunas, notas canceladas, produtos Reg. 75 (incluindo Reg. 61R), ordenação de itens Reg. 54 e totalizadores do Reg. 90.",
             FontSize = 12,
             Foreground = BrushTextBody,
             TextWrapping = TextWrapping.Wrap
@@ -1461,7 +1461,7 @@ public sealed class MainWindow : Window
         var btns = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         btns.Children.Add(CreatePrimaryButton("Corrigir Erros Agora (Auto-Fix)", VectorIcons.Wrench, async () => await RunQuickFixAndRefreshAsync()));
         if (_scoped.XmlComprasOmissas > 0)
-            btns.Children.Add(CreatePrimaryButton($"Lancar {_scoped.XmlComprasOmissas} XML(s) Faltantes", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null)));
+            btns.Children.Add(CreatePrimaryButton($"Lançar {_scoped.XmlComprasOmissas} XML(s) Faltantes", VectorIcons.CheckBadge, async () => await OpenInjectMissingDialogAsync(null)));
 
         var btnSave = CreateQuickActionButton("Salvar Sintegra Atualizado (.txt)...", VectorIcons.ExportDoc, async () => await SaveCurrentBytesDialogAsync());
         btnSave.HorizontalAlignment = HorizontalAlignment.Left;
@@ -1520,7 +1520,7 @@ public sealed class MainWindow : Window
             })
             .ToList();
 
-        var diagCard = CreateCardShell($"Diagnosticos Convenio 57/95 ({filtered.Count} - clique para inspecionar linha)", VectorIcons.Warning, null);
+        var diagCard = CreateCardShell($"Diagnósticos Convênio 57/95 ({filtered.Count} - clique para inspecionar linha)", VectorIcons.Warning, null);
         var dCols = new[]
         {
             new GridLength(65), new GridLength(95), new GridLength(55), new GridLength(50),
@@ -1531,12 +1531,12 @@ public sealed class MainWindow : Window
             dCols,
             hdr =>
             {
-                AddHeaderCell(hdr, 0, "Nivel", TextAlignment.Left);
-                AddHeaderCell(hdr, 1, "Codigo", TextAlignment.Left);
+                AddHeaderCell(hdr, 0, "Nível", TextAlignment.Left);
+                AddHeaderCell(hdr, 1, "Código", TextAlignment.Left);
                 AddHeaderCell(hdr, 2, "Linha", TextAlignment.Right);
                 AddHeaderCell(hdr, 3, "Reg.", TextAlignment.Left);
                 AddHeaderCell(hdr, 4, "Campo", TextAlignment.Left);
-                AddHeaderCell(hdr, 5, "Descricao", TextAlignment.Left);
+                AddHeaderCell(hdr, 5, "Descrição", TextAlignment.Left);
                 AddHeaderCell(hdr, 6, "AutoFix", TextAlignment.Center);
             },
             (g, d) =>
@@ -1553,11 +1553,11 @@ public sealed class MainWindow : Window
                 AddBodyCellFast(g, 3, d.RecordType, TextAlignment.Left, FontWeight.SemiBold, BrushTextDark);
                 AddBodyCellFast(g, 4, d.FieldName, TextAlignment.Left, FontWeight.Normal, BrushTextBody);
                 AddBodyCellFast(g, 5, d.Message, TextAlignment.Left, FontWeight.Normal, BrushTextDark);
-                AddBodyCellFast(g, 6, d.AutoFixable ? "Sim" : "Nao", TextAlignment.Center, FontWeight.SemiBold, d.AutoFixable ? BrushGreen : BrushMuted);
+                AddBodyCellFast(g, 6, d.AutoFixable ? "Sim" : "Não", TextAlignment.Center, FontWeight.SemiBold, d.AutoFixable ? BrushGreen : BrushMuted);
                 g.Cursor = HandCursor;
                 g.Tapped += (_, e) => { e.Handled = true; InspectLineAt(d.Line, d.ColumnStart, d.ColumnEnd); };
             },
-            emptyMessage: "Nenhuma ocorrencia neste filtro.",
+            emptyMessage: "Nenhuma ocorrência neste filtro.",
             listHeight: 330));
 
         root.Children.Add(diagCard);
@@ -1571,15 +1571,15 @@ public sealed class MainWindow : Window
         var root = new StackPanel { Spacing = 12 };
 
         var stats = _db.GetStorageStats();
-        var cfgCard = CreateCardShell("Regime Tributario e Limite da Base SQLite", VectorIcons.SettingsGear, null);
+        var cfgCard = CreateCardShell("Regime Tributário e Limite da Base SQLite", VectorIcons.SettingsGear, null);
         var stack = (StackPanel)cfgCard.Child!;
         stack.Spacing = 10;
 
         stack.Children.Add(new TextBlock { Text = $"Arquivo SQLite: {stats.DbPath}", FontSize = 12, Foreground = BrushTextBody });
-        stack.Children.Add(new TextBlock { Text = $"Espaco em uso: {stats.FormattedSummary}", FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark });
+        stack.Children.Add(new TextBlock { Text = $"Espaço em uso: {stats.FormattedSummary}", FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark });
 
         var limitRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
-        limitRow.Children.Add(new TextBlock { Text = "Limite maximo (MB):", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center });
+        limitRow.Children.Add(new TextBlock { Text = "Limite máximo (MB):", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center });
         var numLimit = new NumericUpDown { Minimum = 16, Maximum = 102400, Increment = 128, Value = stats.MaxLimitMb, Width = 140, FormatString = "N0" };
         limitRow.Children.Add(numLimit);
         limitRow.Children.Add(CreateFilterChip("512 MB", stats.MaxLimitMb == 512, () => { numLimit.Value = 512; }));
@@ -1589,14 +1589,14 @@ public sealed class MainWindow : Window
 
         var chkPrune = new CheckBox
         {
-            Content = "Remover importacoes antigas automaticamente ao atingir o limite configurado",
+            Content = "Remover importações antigas automaticamente ao atingir o limite configurado",
             IsChecked = stats.AutoPrune,
             FontSize = 12
         };
         stack.Children.Add(chkPrune);
 
         var regRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
-        regRow.Children.Add(new TextBlock { Text = "Regime Tributario da empresa:", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center });
+        regRow.Children.Add(new TextBlock { Text = "Regime Tributário da empresa:", FontSize = 12, Foreground = BrushTextBody, VerticalAlignment = VerticalAlignment.Center });
         var cmbRegime = new ComboBox { Width = 220, FontSize = 12 };
         string currentRegime = _doc.Reg10 is not null ? _db.GetCompanyTaxRegime(_doc.Reg10.Cnpj) : "Simples Nacional";
         foreach (string opt in new[] { "Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI / SIMEI" })
@@ -1609,7 +1609,7 @@ public sealed class MainWindow : Window
         stack.Children.Add(regRow);
 
         var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        btnRow.Children.Add(CreatePrimaryButton("Salvar Configuracoes", VectorIcons.CheckBadge, () =>
+        btnRow.Children.Add(CreatePrimaryButton("Salvar Configurações", VectorIcons.CheckBadge, () =>
         {
             _db.UpdateSettings((long)(numLimit.Value ?? 1024), chkPrune.IsChecked ?? true);
             if (_doc.Reg10 is not null && cmbRegime.SelectedItem is string reg)
@@ -1624,7 +1624,7 @@ public sealed class MainWindow : Window
             RenderActiveSection();
         });
         btnVacuum.HorizontalAlignment = HorizontalAlignment.Left;
-        var btnClear = CreateQuickActionButton("Limpar Historico", VectorIcons.Warning, () =>
+        var btnClear = CreateQuickActionButton("Limpar Histórico", VectorIcons.Warning, () =>
         {
             _db.ClearAllHistory();
             UpdateHeaderAndStatusBar();
@@ -1665,7 +1665,7 @@ public sealed class MainWindow : Window
         if (!string.IsNullOrEmpty(_selectedCompanyCnpj))
         {
             var timeline = _db.GetCompanyMonthlyTimeline(_selectedCompanyCnpj);
-            var tlCard = CreateCardShell($"Historico Mensal Salvo ({timeline.Count} competencia(s))", VectorIcons.ChartBar, null);
+            var tlCard = CreateCardShell($"Histórico Mensal Salvo ({timeline.Count} competência(s))", VectorIcons.ChartBar, null);
             var tlStack = (StackPanel)tlCard.Child!;
             if (timeline.Count > 0)
             {
@@ -1673,12 +1673,12 @@ public sealed class MainWindow : Window
                 var rows = new StackPanel();
                 string cols = "80,1*,0.9*,1*,1*,75,1.2*";
                 var hdr = new Grid { ColumnDefinitions = new ColumnDefinitions(cols), Background = BrushHeaderBg };
-                AddHeaderCell(hdr, 0, "Mes", TextAlignment.Left);
+                AddHeaderCell(hdr, 0, "Mês", TextAlignment.Left);
                 AddHeaderCell(hdr, 1, "Compras", TextAlignment.Right);
                 AddHeaderCell(hdr, 2, "Outras", TextAlignment.Right);
                 AddHeaderCell(hdr, 3, "Entradas", TextAlignment.Right);
-                AddHeaderCell(hdr, 4, "Saidas", TextAlignment.Right);
-                AddHeaderCell(hdr, 5, "Saida/Entr.", TextAlignment.Right);
+                AddHeaderCell(hdr, 4, "Saídas", TextAlignment.Right);
+                AddHeaderCell(hdr, 5, "Saída/Entr.", TextAlignment.Right);
                 AddHeaderCell(hdr, 6, "Arquivo Origem", TextAlignment.Left);
                 rows.Children.Add(hdr);
 
@@ -1742,9 +1742,9 @@ public sealed class MainWindow : Window
                     ((IProgress<(int, string)>)progress).Report((8, $"Lendo arquivo: {Path.GetFileName(filePath)}"));
                     bytes = File.ReadAllBytes(filePath);
                     parsedDoc = SintegraParser.ParseBytes(bytes, progress, dlg.Token);
-                    ((IProgress<(int, string)>)progress).Report((92, "Validando regras do Convenio ICMS 57/95..."));
+                    ((IProgress<(int, string)>)progress).Report((92, "Validando regras do Convênio ICMS 57/95..."));
                     parsedReport = SintegraValidator.Validate(parsedDoc);
-                    ((IProgress<(int, string)>)progress).Report((100, "Importacao concluida."));
+                    ((IProgress<(int, string)>)progress).Report((100, "Importação concluída."));
                 }, dlg.Token);
             }
             catch (OperationCanceledException) { failure = new OperationCanceledException(); }
@@ -1828,7 +1828,7 @@ public sealed class MainWindow : Window
                         ((IProgress<(int, string)>)progress).Report((95, $"Cruzando {xmls.Count} XML(s) com o Sintegra..."));
                         result = FiscalCrossAuditor.RunCrossAudit(_doc, xmls, _loadedSped);
                     }
-                    ((IProgress<(int, string)>)progress).Report((100, "Confronto concluido."));
+                    ((IProgress<(int, string)>)progress).Report((100, "Confronto concluído."));
                 }, dlg.Token);
             }
             catch (OperationCanceledException) { failure = new OperationCanceledException(); }
@@ -1891,7 +1891,7 @@ public sealed class MainWindow : Window
                         dlg.UpdateProgress(80, $"Confrontando {sped.Invoices.Count} documentos C100...");
                         result = FiscalCrossAuditor.RunCrossAudit(_doc, _loadedXmlDocs, sped);
                     }
-                    dlg.UpdateProgress(100, "Confronto concluido.");
+                    dlg.UpdateProgress(100, "Confronto concluído.");
                 }, dlg.Token);
             }
             catch (OperationCanceledException) { failure = new OperationCanceledException(); }
@@ -1912,7 +1912,7 @@ public sealed class MainWindow : Window
     {
         if (!_hasDocument)
         {
-            await ShowInfoDialogAsync("Nenhum Sintegra Aberto", "Abra primeiro o arquivo Sintegra (.txt) onde deseja lancar as notas faltantes.");
+            await ShowInfoDialogAsync("Nenhum Sintegra Aberto", "Abra primeiro o arquivo Sintegra (.txt) onde deseja lançar as notas faltantes.");
             return;
         }
 
@@ -1928,7 +1928,7 @@ public sealed class MainWindow : Window
 
         if (gapsToFind.Count == 0)
         {
-            await ShowInfoDialogAsync("Sem Notas Faltantes", "Todas as notas fiscais de compra do periodo ja constam lancadas neste Sintegra.");
+            await ShowInfoDialogAsync("Sem Notas Faltantes", "Todas as notas fiscais de compra do período já constam lançadas neste Sintegra.");
             return;
         }
 
@@ -1945,7 +1945,7 @@ public sealed class MainWindow : Window
 
         if (matchedXmls.Count == 0)
         {
-            await ShowInfoDialogAsync("XMLs Indisponiveis", "Recarregue o pacote ZIP de XMLs para realizar o lancamento detalhado no Sintegra.");
+            await ShowInfoDialogAsync("XMLs Indisponíveis", "Recarregue o pacote ZIP de XMLs para realizar o lançamento detalhado no Sintegra.");
             return;
         }
 
@@ -1974,10 +1974,10 @@ public sealed class MainWindow : Window
         RebuildScopedAndRefresh();
 
         await ShowInfoDialogAsync(
-            "Notas Lancadas no Sintegra!",
-            $"{res.InjectedInvoicesCount} nota(s) fiscal(is) incluida(s) no Sintegra ({res.GeneratedReg54Items} itens Reg. 54, {res.GeneratedReg75Products} produtos Reg. 75).\n\n" +
-            $"Validacao apos lancamento: {res.AfterReport.Summary.ErrorCount} erro(s), {res.AfterReport.Summary.WarningCount} aviso(s).\n\n" +
-            "Clique no botao verde 'Salvar Sintegra Atualizado' no topo para gravar o novo arquivo .txt em disco.");
+            "Notas Lançadas no Sintegra!",
+            $"{res.InjectedInvoicesCount} nota(s) fiscal(is) incluída(s) no Sintegra ({res.GeneratedReg54Items} itens Reg. 54, {res.GeneratedReg75Products} produtos Reg. 75).\n\n" +
+            $"Validação após lançamento: {res.AfterReport.Summary.ErrorCount} erro(s), {res.AfterReport.Summary.WarningCount} aviso(s).\n\n" +
+            "Clique no botão verde 'Salvar Sintegra Atualizado' no topo para gravar o novo arquivo .txt em disco.");
     }
 
     private async Task RunQuickFixAndRefreshAsync()
@@ -2001,7 +2001,7 @@ public sealed class MainWindow : Window
         RebuildScopedAndRefresh();
 
         await ShowInfoDialogAsync(
-            "Correcao Automatica Concluida",
+            "Correção Automática Concluída",
             $"Erros: {fx.BeforeSummary.ErrorCount} -> {fx.AfterSummary.ErrorCount}\n" +
             $"Avisos: {fx.BeforeSummary.WarningCount} -> {fx.AfterSummary.WarningCount}\n\n" +
             "Clique em 'Salvar Sintegra Atualizado' para gravar o arquivo corrigido.");
@@ -2072,7 +2072,7 @@ public sealed class MainWindow : Window
         if (!_hasDocument) return;
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Salvar Relatorio em PDF",
+            Title = "Salvar Relatório em PDF",
             SuggestedFileName = $"Relatorio_Sintegra_{_scoped.SelectedYearMonth ?? "Anual"}.pdf",
             DefaultExtension = "pdf",
             FileTypeChoices = new[] { new FilePickerFileType("Documento PDF") { Patterns = new[] { "*.pdf" } } }
@@ -2082,7 +2082,7 @@ public sealed class MainWindow : Window
         if (string.IsNullOrEmpty(path)) return;
 
         PdfReportGenerator.GeneratePdf(BuildCurrentReportContext(ReportMode.Completo), path);
-        await ShowInfoDialogAsync("PDF Gerado", $"Relatorio salvo em:\n{path}");
+        await ShowInfoDialogAsync("PDF Gerado", $"Relatório salvo em:\n{path}");
     }
 
     private async Task ExportDirectXlsxAsync()
@@ -2139,7 +2139,7 @@ public sealed class MainWindow : Window
         {
             return new TextBlock
             {
-                Text = "Clique em um mes para filtrar",
+                Text = "Clique em um mês para filtrar",
                 FontSize = 11,
                 Foreground = BrushMuted,
                 VerticalAlignment = VerticalAlignment.Center
@@ -2165,7 +2165,7 @@ public sealed class MainWindow : Window
     {
         var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, VerticalAlignment = VerticalAlignment.Center };
         sp.Children.Add(CreateLegendDot("#2563EB", "Entradas"));
-        sp.Children.Add(CreateLegendDot("#16A34A", "Saidas"));
+        sp.Children.Add(CreateLegendDot("#16A34A", "Saídas"));
         return sp;
     }
 

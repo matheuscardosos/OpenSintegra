@@ -1,5 +1,5 @@
-name: Sugestao de Funcionalidade
-description: Proponha novos registros estaduais, regras de validacao ou melhorias na interface.
+name: Sugestão de Funcionalidade
+description: Proponha novos registros estaduais, regras de validação ou melhorias na interface.
 title: "[Feat]: "
 labels: ["enhancement"]
 body:
@@ -7,13 +7,13 @@ body:
     id: problem
     attributes:
       label: Contexto e Problema
-      description: Qual necessidade contabil ou tecnica esta sugestao resolve?
+      description: Qual necessidade contábil ou técnica esta sugestão resolve?
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: Solucao Proposta
-      description: Descreva como voce imagina o funcionamento no OpenSintegra.App ou OpenSintegra.Cli.
+      label: Solução Proposta
+      description: Descreva como você imagina o funcionamento no OpenSintegra.App ou OpenSintegra.Cli.
     validations:
       required: true

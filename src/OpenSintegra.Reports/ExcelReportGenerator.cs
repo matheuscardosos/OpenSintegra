@@ -13,7 +13,7 @@ public static class ExcelReportGenerator
     public static void GenerateWorkbook(FiscalReportContext ctx, string outputPath)
     {
         using var wb = new XLWorkbook();
-        wb.Properties.Title = "Relatorio Fiscal OpenSintegra";
+        wb.Properties.Title = "Relatório Fiscal OpenSintegra";
         wb.Properties.Company = ctx.Document.Reg10?.NomeContribuinte ?? "OpenSintegra";
 
         BuildExecutiveSheet(wb, ctx);
@@ -37,10 +37,10 @@ public static class ExcelReportGenerator
         var r10 = ctx.Document.Reg10;
         var v = ctx.ScopedView;
 
-        ws.Cell(1, 1).Value = "OpenSintegra Contabil - Relatorio Fiscal de Entradas e Saidas";
+        ws.Cell(1, 1).Value = "OpenSintegra Contábil - Relatório Fiscal de Entradas e Saídas";
         ws.Cell(1, 1).Style.Font.Bold = true;
         ws.Cell(1, 1).Style.Font.FontSize = 15;
-        ws.Cell(2, 1).Value = $"Periodo analisado: {v.PeriodLabel}";
+        ws.Cell(2, 1).Value = $"Período analisado: {v.PeriodLabel}";
         ws.Cell(2, 1).Style.Font.FontColor = XLColor.FromHtml("#475569");
 
         int row = 4;
@@ -56,27 +56,27 @@ public static class ExcelReportGenerator
             row++;
         }
 
-        AddKv("Razao Social", r10?.NomeContribuinte ?? "-");
+        AddKv("Razão Social", r10?.NomeContribuinte ?? "-");
         AddKv("CNPJ", r10 is null ? "-" : TaxIdValidator.FormatCnpj(r10.Cnpj));
-        AddKv("Inscricao Estadual", r10?.Ie ?? "-");
+        AddKv("Inscrição Estadual", r10?.Ie ?? "-");
         AddKv("UF", r10?.Uf ?? "-");
-        AddKv("Regime Tributario", ctx.TaxRegime);
-        AddKv("Convenio", "ICMS 57/95 (Sintegra)");
+        AddKv("Regime Tributário", ctx.TaxRegime);
+        AddKv("Convênio", "ICMS 57/95 (Sintegra)");
 
         row++;
-        AddKv("Compras Comerciais Lancadas", v.ComprasEntradasCents / 100m, BrlFormat);
-        AddKv("Outras Entradas (Devolucao / Bonif. / etc.)", v.OutrasEntradasCents / 100m, BrlFormat);
+        AddKv("Compras Comerciais Lançadas", v.ComprasEntradasCents / 100m, BrlFormat);
+        AddKv("Outras Entradas (Devolução / Bonif. / etc.)", v.OutrasEntradasCents / 100m, BrlFormat);
         AddKv("Total de Entradas no Sintegra", v.TotalEntradasCents / 100m, BrlFormat, true);
-        AddKv("Total de Saidas / Vendas no Sintegra", v.TotalSaidasCents / 100m, BrlFormat, true);
-        AddKv("Relacao Saidas / Entradas", (v.RatioSaidaSobreEntradaPct ?? 0) / 100.0, "0.0%", true);
+        AddKv("Total de Saídas / Vendas no Sintegra", v.TotalSaidasCents / 100m, BrlFormat, true);
+        AddKv("Relação Saídas / Entradas", (v.RatioSaidaSobreEntradaPct ?? 0) / 100.0, "0.0%", true);
 
         if (ctx.Audit is not null)
         {
             row++;
             AddKv("Notas de Compra nos XMLs", v.XmlComprasTotal);
-            AddKv("Notas de Compra Lancadas no Sintegra", v.XmlComprasLancadas);
-            AddKv("Notas de Compra Nao Lancadas (Faltantes)", v.XmlComprasOmissas, boldVal: v.XmlComprasOmissas > 0);
-            AddKv("Valor Total Nao Lancado", v.XmlComprasOmissasCents / 100m, BrlFormat, v.XmlComprasOmissas > 0);
+            AddKv("Notas de Compra Lançadas no Sintegra", v.XmlComprasLancadas);
+            AddKv("Notas de Compra Não Lançadas (Faltantes)", v.XmlComprasOmissas, boldVal: v.XmlComprasOmissas > 0);
+            AddKv("Valor Total Não Lançado", v.XmlComprasOmissasCents / 100m, BrlFormat, v.XmlComprasOmissas > 0);
         }
 
         ws.Columns().AdjustToContents(1, 30, 60);
@@ -84,11 +84,11 @@ public static class ExcelReportGenerator
 
     private static void BuildMonthlySheet(XLWorkbook wb, FiscalReportContext ctx)
     {
-        var ws = wb.Worksheets.Add("Movimentacao Mensal");
+        var ws = wb.Worksheets.Add("Movimentação Mensal");
         string[] headers =
         [
-            "Mes", "Compras", "Outras Entradas", "Total Entradas",
-            "Saidas Reg 50", "Saidas NFC-e (61)", "Total Saidas", "Saidas / Entradas", "Notas XML Faltantes", "Valor Nao Lancado"
+            "Mês", "Compras", "Outras Entradas", "Total Entradas",
+            "Saídas Reg 50", "Saídas NFC-e (61)", "Total Saídas", "Saídas / Entradas", "Notas XML Faltantes", "Valor Não Lançado"
         ];
         WriteTableHeader(ws, headers);
 
@@ -147,7 +147,7 @@ public static class ExcelReportGenerator
     private static void BuildTopProductsSheet(XLWorkbook wb, FiscalReportContext ctx)
     {
         var ws = wb.Worksheets.Add("Produtos Mais Vendidos");
-        WriteTableHeader(ws, ["Posicao", "Codigo Produto", "Descricao", "Unidade", "Qtd Vendida", "Total Vendido", "Participacao %"]);
+        WriteTableHeader(ws, ["Posição", "Código Produto", "Descrição", "Unidade", "Qtd. Vendida", "Total Vendido", "Participação %"]);
 
         int r = 2;
         foreach (var p in ctx.ScopedView.TopSellingProducts)
@@ -169,8 +169,8 @@ public static class ExcelReportGenerator
 
     private static void BuildCfopSheet(XLWorkbook wb, FiscalReportContext ctx)
     {
-        var ws = wb.Worksheets.Add("Apuracao por CFOP");
-        WriteTableHeader(ws, ["CFOP", "Natureza da Operacao", "Notas", "Valor Contabil", "Base ICMS", "Valor ICMS", "Isenta", "Outras"]);
+        var ws = wb.Worksheets.Add("Apuração por CFOP");
+        WriteTableHeader(ws, ["CFOP", "Natureza da Operação", "Notas", "Valor Contábil", "Base ICMS", "Valor ICMS", "Isenta", "Outras"]);
 
         int r = 2;
         foreach (var c in ctx.ScopedView.CfopRows)
@@ -193,7 +193,7 @@ public static class ExcelReportGenerator
     private static void BuildInvoicesSheet(XLWorkbook wb, FiscalReportContext ctx)
     {
         var ws = wb.Worksheets.Add("Notas Reg 50");
-        WriteTableHeader(ws, ["Data", "Numero", "Serie", "Modelo", "CNPJ Emit/Dest", "UF", "CFOP", "Emitente", "Valor Total", "Base ICMS", "Valor ICMS", "Situacao"]);
+        WriteTableHeader(ws, ["Data", "Número", "Série", "Modelo", "CNPJ Emit./Dest.", "UF", "CFOP", "Emitente", "Valor Total", "Base ICMS", "Valor ICMS", "Situação"]);
 
         int r = 2;
         foreach (var nf in ctx.ScopedView.Reg50Docs)
@@ -219,7 +219,7 @@ public static class ExcelReportGenerator
 
     private static void BuildReg61Sheet(XLWorkbook wb, FiscalReportContext ctx)
     {
-        var ws = wb.Worksheets.Add("Saidas NFC-e Reg 61");
+        var ws = wb.Worksheets.Add("Saídas NFC-e Reg 61");
         WriteTableHeader(ws, ["Data", "Modelo", "Ordem Inicial", "Ordem Final", "Valor Total", "Base ICMS", "Valor ICMS"]);
 
         int r = 2;
@@ -242,7 +242,7 @@ public static class ExcelReportGenerator
     private static void BuildXmlAuditSheet(XLWorkbook wb, FiscalReportContext ctx)
     {
         var ws = wb.Worksheets.Add("Confronto XML");
-        WriteTableHeader(ws, ["Mes", "Emissao", "Fornecedor", "CNPJ", "Numero", "Classificacao", "Valor XML", "Valor Sintegra", "Status", "CFOP XML", "CFOP Sintegra", "Observacoes"]);
+        WriteTableHeader(ws, ["Mês", "Emissão", "Fornecedor", "CNPJ", "Número", "Classificação", "Valor XML", "Valor Sintegra", "Status", "CFOP XML", "CFOP Sintegra", "Observações"]);
 
         int r = 2;
         foreach (var d in ctx.ScopedView.XmlDocumentRows)
@@ -273,8 +273,8 @@ public static class ExcelReportGenerator
 
     private static void BuildDiagnosticsSheet(XLWorkbook wb, FiscalReportContext ctx)
     {
-        var ws = wb.Worksheets.Add("Diagnostico");
-        WriteTableHeader(ws, ["Codigo", "Severidade", "Linha", "Registro", "Campo", "Mensagem", "Encontrado", "Esperado"]);
+        var ws = wb.Worksheets.Add("Diagnóstico");
+        WriteTableHeader(ws, ["Código", "Severidade", "Linha", "Registro", "Campo", "Mensagem", "Encontrado", "Esperado"]);
 
         int r = 2;
         foreach (var d in ctx.ScopedView.Diagnostics)

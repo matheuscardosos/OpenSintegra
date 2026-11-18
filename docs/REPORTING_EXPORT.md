@@ -1,29 +1,30 @@
-# Geracao de Relatorios Vetoriais (PDF) e Planilhas Excel (.xlsx)
+# Geração de Relatórios Vetoriais (PDF) e Planilhas Excel (.xlsx)
 
-O modulo `OpenSintegra.Reports` utiliza exclusivamente bibliotecas permissivas de codigo aberto (`SkiaSharp` e `ClosedXML`), funcionando de forma identica no Windows, Linux e macOS sem depender de Microsoft Office ou suites proprietarias instaladas.
+O módulo `OpenSintegra.Reports` utiliza exclusivamente bibliotecas permissivas de código aberto (`SkiaSharp` e `ClosedXML`), funcionando de forma idêntica no Windows, Linux e macOS sem depender de Microsoft Office ou suítes proprietárias instaladas.
 
-Todos os relatorios respeitam integralmente o filtro ativo na tela ou no parametro `--month YYYYMM` da CLI atraves de `ScopedFiscalView`.
+Todos os relatórios respeitam integralmente o filtro ativo na tela ou no parâmetro `--month YYYYMM` da CLI através de `ScopedFiscalView`.
 
-## 1. Relatorio Vetorial em PDF (`PdfReportGenerator`)
+## 1. Relatório Vetorial em PDF (`PdfReportGenerator`)
 
-Produz documento formato **A4 (`595 x 842 pt`)** com multiplas paginas automaticas:
-- **Cabecalho Institucional:** Identificacao visual OpenSintegra Contabil, titulo e periodo filtrado.
-- **Identificacao da Empresa:** Razao Social, CNPJ formatado, Inscricao Estadual, Regime Tributario e Versao do Convenio ICMS 57/95.
-- **Resumo do Periodo (4 Blocos KPI):** Total de Entradas, Total de Saidas, Saldo (`Entradas` x `Saidas`) e Equilibrio Fiscal percentual.
-- **Movimentacao Mensal:** Tabela zebrada exibindo `Compras`, `Outras Entradas`, `Total Entradas`, `Total Saidas`, `Saldo (S - E)`, `Proporcao S/E` e linha consolidada de Total com calculo proporcional global.
-- **Observacoes e Pendencias:** Lista de inconsistencias Sintegra no periodo e XMLs de compra omissos.
-- **Pagina Complementar (quando houver dados):** Detalhamento de Notas Fiscais Faltantes (Confronto XML) e Apuracao por CFOP.
+Produz documento formato **A4 (`595 x 842 pt`)** com múltiplas páginas automáticas em três modos (`Completo`, `SomenteNotasNaoLancadas` e `ProdutosMaisVendidos`):
+- **Cabeçalho Institucional:** Monograma vetorial OpenSintegra Contábil, título do relatório e período filtrado.
+- **Identificação da Empresa:** Razão Social, CNPJ formatado, Inscrição Estadual, Regime Tributário e Convênio ICMS 57/95.
+- **Resumo do Período (4 Blocos KPI):** Total de Entradas, Total de Saídas (Vendas), Saídas / Entradas e Compras Não Lançadas (XML).
+- **Movimentação Mês a Mês:** Tabela zebrada exibindo `Compras`, `Outras Entr.`, `Total Entradas`, `Total Saídas`, `Saídas / Entr.`, `Conferência XML` e linha consolidada de Total.
+- **Notas Fiscais de Compra Não Lançadas:** Listagem em linguagem simples com mês, emissão, número da NF, fornecedor e valor faltante para envio ao cliente.
+- **Produtos Mais Vendidos (Top 40):** Ranking por valor movimentado com código, descrição (`Reg 75`), unidade, quantidade, total vendido e participação percentual.
 
 ## 2. Pasta de Trabalho Excel (`ExcelReportGenerator`)
 
-Gera arquivo `.xlsx` contendo **7 planilhas organizadas e estilizadas**:
+Gera arquivo `.xlsx` contendo **8 planilhas organizadas e estilizadas**:
 
-| Aba | Conteudo Principal |
+| Aba | Conteúdo Principal |
 | --- | ------------------ |
-| `1. Resumo Executivo` | Dados cadastrais da empresa, periodo avaliado, regime tributario, totais consolidados e saldo |
-| `2. Movimentacao Mensal` | Evolucao mensal completa com totais calculados via formula dinamica `SUM(...)` e proporcao S/E |
-| `3. Apuracao por CFOP` | Sumarizacao contabil e tributaria (Valor Contabil, Base ICMS, ICMS, Isentas, Outras) |
-| `4. Notas Reg 50` | Listagem das notas fiscais (Registro 50) presentes no escopo selecionado |
-| `5. Saidas NFC-e Reg 61` | Movimentacao diaria por documento fiscal de consumidor / NFC-e (Registro 61) |
-| `6. Confronto XML` | Notas XML auditadas com destaque visual para compras omissas |
-| `7. Diagnostico` | Listagem de erros, avisos e informacoes de validacao apontados no arquivo |
+| `Resumo Executivo` | Dados cadastrais da empresa, período avaliado, regime tributário e totais consolidados |
+| `Movimentação Mensal` | Evolução mensal completa com totais calculados via fórmula dinâmica `SUM(...)` e proporção S/E |
+| `Produtos Mais Vendidos` | Ranking de mercadorias movimentadas com quantidade, total vendido e participação (%) |
+| `Apuração por CFOP` | Sumarização contábil e tributária (Valor Contábil, Base ICMS, ICMS, Isentas, Outras) |
+| `Notas Reg 50` | Listagem das notas fiscais (Registro 50) presentes no escopo selecionado |
+| `Saídas NFC-e Reg 61` | Movimentação diária por documento fiscal de consumidor / NFC-e (Registro 61) |
+| `Confronto XML` | Notas XML auditadas com destaque visual para compras não lançadas |
+| `Diagnóstico` | Listagem de erros, avisos e informações de validação apontados no arquivo |

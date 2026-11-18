@@ -41,9 +41,9 @@ public static class PdfReportGenerator
 
         string reportTitle = ctx.Mode switch
         {
-            ReportMode.SomenteNotasNaoLancadas => "Notas Fiscais Nao Lancadas no Sintegra",
+            ReportMode.SomenteNotasNaoLancadas => "Notas Fiscais Não Lançadas no Sintegra",
             ReportMode.ProdutosMaisVendidos => "Ranking de Produtos Mais Vendidos",
-            _ => "Relatorio Fiscal de Entradas e Saidas"
+            _ => "Relatório Fiscal de Entradas e Saídas"
         };
 
         SKCanvas? canvas = null;
@@ -74,16 +74,16 @@ public static class PdfReportGenerator
 
         // 1. Company Identification section
         y += 8f;
-        DrawSectionBand(canvas!, ref y, "Identificacao da Empresa", tfBold, paintDark, paintFillHeader);
+        DrawSectionBand(canvas!, ref y, "Identificação da Empresa", tfBold, paintDark, paintFillHeader);
         y += 10f;
 
-        string companyName = r10?.NomeContribuinte ?? "Contribuinte nao identificado";
+        string companyName = r10?.NomeContribuinte ?? "Contribuinte não identificado";
         string cnpj = r10 is null ? "-" : TaxIdValidator.FormatCnpj(r10.Cnpj);
         string ie = r10?.Ie ?? "-";
 
-        DrawText(canvas!, "Razao Social:", Margin, y, tfBold, 9.5f, paintDark);
+        DrawText(canvas!, "Razão Social:", Margin, y, tfBold, 9.5f, paintDark);
         DrawText(canvas!, TrimToLen(companyName, 44), Margin + 74f, y, tfReg, 9.5f, paintDark);
-        DrawText(canvas!, "Regime Tributario:", Margin + 320f, y, tfBold, 9.5f, paintDark);
+        DrawText(canvas!, "Regime Tributário:", Margin + 320f, y, tfBold, 9.5f, paintDark);
         DrawText(canvas!, ctx.TaxRegime, Margin + 412f, y, tfReg, 9.5f, paintDark);
         y += 16f;
 
@@ -91,12 +91,12 @@ public static class PdfReportGenerator
         DrawText(canvas!, cnpj, Margin + 74f, y, tfReg, 9.5f, paintDark);
         DrawText(canvas!, "IE:", Margin + 205f, y, tfBold, 9.5f, paintDark);
         DrawText(canvas!, ie, Margin + 225f, y, tfReg, 9.5f, paintDark);
-        DrawText(canvas!, "Convenio:", Margin + 320f, y, tfBold, 9.5f, paintDark);
+        DrawText(canvas!, "Convênio:", Margin + 320f, y, tfBold, 9.5f, paintDark);
         DrawText(canvas!, "ICMS 57/95 (Sintegra)", Margin + 375f, y, tfReg, 9.5f, paintDark);
         y += 20f;
 
         // 2. Summary Box (4 clean, easy-to-understand columns)
-        DrawSectionBand(canvas!, ref y, "Resumo do Periodo", tfBold, paintDark, paintFillHeader);
+        DrawSectionBand(canvas!, ref y, "Resumo do Período", tfBold, paintDark, paintFillHeader);
         y += 8f;
 
         float boxH = 46f;
@@ -122,15 +122,15 @@ public static class PdfReportGenerator
 
         DrawSummaryBoxCell(canvas, Margin, colWs[0], y, "Total de Entradas",
             $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", tfReg, tfBold, paintMuted, paintDark);
-        DrawSummaryBoxCell(canvas, Margin + colWs[0], colWs[1], y, "Total de Saidas (Vendas)",
+        DrawSummaryBoxCell(canvas, Margin + colWs[0], colWs[1], y, "Total de Saídas (Vendas)",
             $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", tfReg, tfBold, paintMuted, paintDark);
-        DrawSummaryBoxCell(canvas, Margin + colWs[0] + colWs[1], colWs[2], y, "Saidas / Entradas",
+        DrawSummaryBoxCell(canvas, Margin + colWs[0] + colWs[1], colWs[2], y, "Saídas / Entradas",
             v.RatioSaidaSobreEntradaPct.HasValue ? $"{v.RatioSaidaSobreEntradaPct.Value:N1}%" : "-",
             tfReg, tfBold, paintMuted, paintBlue);
 
         string missingText = ctx.Audit is null
-            ? "XML nao carregado"
-            : (hasMissing ? $"{v.XmlComprasOmissas} ({($"R$ {TaxIdValidator.FormatCentsBrl(v.XmlComprasOmissasCents)}")})" : "Todas lancadas");
+            ? "XML não carregado"
+            : (hasMissing ? $"{v.XmlComprasOmissas} ({($"R$ {TaxIdValidator.FormatCentsBrl(v.XmlComprasOmissasCents)}")})" : "Todas lançadas");
         DrawSummaryBoxCell(canvas, xMissing, colWs[3], y, "Compras Faltantes (XML)",
             missingText, tfReg, tfBold, paintMuted, ctx.Audit is null ? paintMuted : (hasMissing ? paintRed : paintGreen));
 
@@ -140,7 +140,7 @@ public static class PdfReportGenerator
         if (ctx.Mode == ReportMode.Completo && v.MonthlyRows.Count > 0)
         {
             EnsureSpace(70f);
-            DrawSectionBand(canvas!, ref y, "Movimentacao Mes a Mes (Entradas x Saidas x Conferencia XML)", tfBold, paintDark, paintFillHeader);
+            DrawSectionBand(canvas!, ref y, "Movimentação Mês a Mês (Entradas x Saídas x Conferência XML)", tfBold, paintDark, paintFillHeader);
             y += 6f;
 
             float[] mCols = [52f, 78f, 72f, 78f, 78f, 62f, ContentW - 420f];
@@ -204,18 +204,18 @@ public static class PdfReportGenerator
         if (ctx.Mode is ReportMode.Completo or ReportMode.SomenteNotasNaoLancadas)
         {
             EnsureSpace(70f);
-            DrawSectionBand(canvas!, ref y, "Notas Fiscais de Compra Nao Lancadas no Sintegra", tfBold, paintDark, paintFillHeader);
+            DrawSectionBand(canvas!, ref y, "Notas Fiscais de Compra Não Lançadas no Sintegra", tfBold, paintDark, paintFillHeader);
             y += 8f;
 
             var missingRows = v.XmlDocumentRows.Where(r => r.IsCriticalGap).ToList();
             if (ctx.Audit is null)
             {
-                DrawText(canvas!, "Nenhum arquivo XML foi importado para conferir notas nao lancadas neste relatorio.", Margin + 4f, y + 6f, tfReg, 9f, paintMuted);
+                DrawText(canvas!, "Nenhum arquivo XML foi importado para conferir notas não lançadas neste relatório.", Margin + 4f, y + 6f, tfReg, 9f, paintMuted);
                 y += 22f;
             }
             else if (missingRows.Count == 0)
             {
-                DrawText(canvas!, "Todas as notas fiscais de compra identificadas nos XMLs do periodo estao devidamente lancadas no Sintegra.", Margin + 4f, y + 6f, tfBold, 9f, paintGreen);
+                DrawText(canvas!, "Todas as notas fiscais de compra identificadas nos XMLs do período estão devidamente lançadas no Sintegra.", Margin + 4f, y + 6f, tfBold, 9f, paintGreen);
                 y += 22f;
             }
             else
@@ -223,9 +223,9 @@ public static class PdfReportGenerator
                 float[] oCols = [56f, 64f, 70f, ContentW - 275f, 85f];
                 canvas!.DrawRect(new SKRect(Margin, y, Margin + ContentW, y + 20f), paintFillHeader);
                 float ox = Margin;
-                DrawCellLeft(canvas, ox, oCols[0], y + 13f, "Mes", tfBold, 8.3f, paintDark); ox += oCols[0];
-                DrawCellLeft(canvas, ox, oCols[1], y + 13f, "Emissao", tfBold, 8.3f, paintDark); ox += oCols[1];
-                DrawCellLeft(canvas, ox, oCols[2], y + 13f, "Nota / Serie", tfBold, 8.3f, paintDark); ox += oCols[2];
+                DrawCellLeft(canvas, ox, oCols[0], y + 13f, "Mês", tfBold, 8.3f, paintDark); ox += oCols[0];
+                DrawCellLeft(canvas, ox, oCols[1], y + 13f, "Emissão", tfBold, 8.3f, paintDark); ox += oCols[1];
+                DrawCellLeft(canvas, ox, oCols[2], y + 13f, "Nota / Série", tfBold, 8.3f, paintDark); ox += oCols[2];
                 DrawCellLeft(canvas, ox, oCols[3], y + 13f, "Fornecedor (Emitente)", tfBold, 8.3f, paintDark); ox += oCols[3];
                 DrawCellRight(canvas, ox, oCols[4], y + 13f, "Valor NF", tfBold, 8.3f, paintDark);
                 y += 20f;
@@ -250,7 +250,7 @@ public static class PdfReportGenerator
 
                 EnsureSpace(22f);
                 canvas!.DrawRect(new SKRect(Margin, y, Margin + ContentW, y + 21f), paintFillRedTint);
-                DrawCellLeft(canvas, Margin, ContentW - 95f, y + 14f, $"Total nao lancado ({missingRows.Count} nota(s)):", tfBold, 8.6f, paintRed);
+                DrawCellLeft(canvas, Margin, ContentW - 95f, y + 14f, $"Total não lançado ({missingRows.Count} nota(s)):", tfBold, 8.6f, paintRed);
                 DrawCellRight(canvas, Margin + ContentW - 95f, 95f, y + 14f, $"R$ {TaxIdValidator.FormatCentsBrl(v.XmlComprasOmissasCents)}", tfBold, 8.6f, paintRed);
                 y += 30f;
             }
@@ -270,8 +270,8 @@ public static class PdfReportGenerator
             canvas!.DrawRect(new SKRect(Margin, y, Margin + ContentW, y + 20f), paintFillHeader);
             float px = Margin;
             DrawCellLeft(canvas, px, pCols[0], y + 13f, "#", tfBold, 8.3f, paintDark); px += pCols[0];
-            DrawCellLeft(canvas, px, pCols[1], y + 13f, "Codigo", tfBold, 8.3f, paintDark); px += pCols[1];
-            DrawCellLeft(canvas, px, pCols[2], y + 13f, "Descricao do Produto", tfBold, 8.3f, paintDark); px += pCols[2];
+            DrawCellLeft(canvas, px, pCols[1], y + 13f, "Código", tfBold, 8.3f, paintDark); px += pCols[1];
+            DrawCellLeft(canvas, px, pCols[2], y + 13f, "Descrição do Produto", tfBold, 8.3f, paintDark); px += pCols[2];
             DrawCellLeft(canvas, px, pCols[3], y + 13f, "Un.", tfBold, 8.3f, paintDark); px += pCols[3];
             DrawCellRight(canvas, px, pCols[4], y + 13f, "Qtd.", tfBold, 8.3f, paintDark); px += pCols[4];
             DrawCellRight(canvas, px, pCols[5], y + 13f, "Total Vendido", tfBold, 8.3f, paintDark);
@@ -360,10 +360,10 @@ public static class PdfReportGenerator
         c.DrawPath(p, iconPaint);
 
         DrawText(c, "OpenSintegra", Margin + 36f, Margin + 13f, tfBold, 14f, paintDark);
-        DrawText(c, "Contabil", Margin + 36f, Margin + 27f, tfReg, 11f, paintMuted);
+        DrawText(c, "Contábil", Margin + 36f, Margin + 27f, tfReg, 11f, paintMuted);
 
         DrawTextRight(c, reportTitle, PageW - Margin, Margin + 14f, tfBold, 13.5f, paintDark);
-        DrawTextRight(c, $"Periodo: {periodLabel}", PageW - Margin, Margin + 29f, tfReg, 10f, paintMuted);
+        DrawTextRight(c, $"Período: {periodLabel}", PageW - Margin, Margin + 29f, tfReg, 10f, paintMuted);
 
         c.DrawLine(Margin, Margin + 36f, PageW - Margin, Margin + 36f, heavyLine);
     }
@@ -387,12 +387,12 @@ public static class PdfReportGenerator
     {
         c.DrawRect(new SKRect(Margin, y, Margin + ContentW, y + 21f), fill);
         float x = Margin;
-        DrawCellLeft(c, x, cols[0], y + 14f, "Mes", tfBold, 8.2f, dark); x += cols[0];
+        DrawCellLeft(c, x, cols[0], y + 14f, "Mês", tfBold, 8.2f, dark); x += cols[0];
         DrawCellRight(c, x, cols[1], y + 14f, "Compras", tfBold, 8.2f, dark); x += cols[1];
         DrawCellRight(c, x, cols[2], y + 14f, "Outras Entr.", tfBold, 8.2f, dark); x += cols[2];
         DrawCellRight(c, x, cols[3], y + 14f, "Total Entr.", tfBold, 8.2f, dark); x += cols[3];
-        DrawCellRight(c, x, cols[4], y + 14f, "Total Saidas", tfBold, 8.2f, dark); x += cols[4];
-        DrawCellRight(c, x, cols[5], y + 14f, "Saida/Entr.", tfBold, 8.2f, dark); x += cols[5];
+        DrawCellRight(c, x, cols[4], y + 14f, "Total Saídas", tfBold, 8.2f, dark); x += cols[4];
+        DrawCellRight(c, x, cols[5], y + 14f, "Saída/Entr.", tfBold, 8.2f, dark); x += cols[5];
         DrawCellRight(c, x, cols[6], y + 14f, "XMLs Faltantes", tfBold, 8.2f, dark);
     }
 
@@ -401,8 +401,8 @@ public static class PdfReportGenerator
     {
         float fy = PageH - Margin;
         c.DrawLine(Margin, fy - 14f, PageW - Margin, fy - 14f, line);
-        DrawText(c, $"OpenSintegra Contabil v{version}", Margin, fy - 2f, tfReg, 8.5f, muted);
-        DrawTextRight(c, $"Relatorio gerado em {timestamp}  |  Pagina {pageNum}", PageW - Margin, fy - 2f, tfReg, 8.5f, muted);
+        DrawText(c, $"OpenSintegra Contábil v{version}", Margin, fy - 2f, tfReg, 8.5f, muted);
+        DrawTextRight(c, $"Relatório gerado em {timestamp}  |  Página {pageNum}", PageW - Margin, fy - 2f, tfReg, 8.5f, muted);
     }
 
     private static void DrawText(SKCanvas c, string text, float x, float baselineY, SKTypeface tf, float size, SKPaint paint)

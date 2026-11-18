@@ -24,7 +24,7 @@ public sealed class ReportPreviewWindow : Window
     {
         _baseCtx = ctx;
         _activeCtx = ctx;
-        Title = $"OpenSintegra Contabil v{ctx.AppVersion} - Relatorio";
+        Title = $"OpenSintegra Contábil v{ctx.AppVersion} - Relatório";
         Icon = VectorIcons.AppWindowIcon;
         Width = 980;
         Height = 760;
@@ -98,8 +98,8 @@ public sealed class ReportPreviewWindow : Window
         };
 
         var cmbMode = new ComboBox { Width = 290, FontSize = 12 };
-        cmbMode.Items.Add(new ComboBoxItem { Content = "Relatorio Completo (Entradas x Saidas + Faltantes)", Tag = ReportMode.Completo });
-        cmbMode.Items.Add(new ComboBoxItem { Content = "Somente Notas Nao Lancadas (Para Cliente)", Tag = ReportMode.SomenteNotasNaoLancadas });
+        cmbMode.Items.Add(new ComboBoxItem { Content = "Relatório Completo (Entradas x Saídas + Faltantes)", Tag = ReportMode.Completo });
+        cmbMode.Items.Add(new ComboBoxItem { Content = "Somente Notas Não Lançadas (Para Cliente)", Tag = ReportMode.SomenteNotasNaoLancadas });
         cmbMode.Items.Add(new ComboBoxItem { Content = "Produtos Mais Vendidos", Tag = ReportMode.ProdutosMaisVendidos });
         cmbMode.SelectedIndex = _baseCtx.Mode switch
         {
@@ -207,9 +207,9 @@ public sealed class ReportPreviewWindow : Window
 
         string docTitle = _activeCtx.Mode switch
         {
-            ReportMode.SomenteNotasNaoLancadas => "Notas Fiscais Nao Lancadas no Sintegra",
+            ReportMode.SomenteNotasNaoLancadas => "Notas Fiscais Não Lançadas no Sintegra",
             ReportMode.ProdutosMaisVendidos => "Ranking de Produtos Mais Vendidos",
-            _ => "Relatorio Fiscal de Entradas e Saidas"
+            _ => "Relatório Fiscal de Entradas e Saídas"
         };
 
         // Top Report Header
@@ -227,7 +227,7 @@ public sealed class ReportPreviewWindow : Window
                     Children =
                     {
                         new TextBlock { Text = "OpenSintegra", FontSize = 18, FontWeight = FontWeight.Bold, Foreground = Brush.Parse("#0F172A") },
-                        new TextBlock { Text = "Contabil", FontSize = 14, Foreground = Brush.Parse("#475569") }
+                        new TextBlock { Text = "Contábil", FontSize = 14, Foreground = Brush.Parse("#475569") }
                     }
                 }
             }
@@ -242,7 +242,7 @@ public sealed class ReportPreviewWindow : Window
             Children =
             {
                 new TextBlock { Text = docTitle, FontSize = 17, FontWeight = FontWeight.Bold, Foreground = Brush.Parse("#0F172A"), HorizontalAlignment = HorizontalAlignment.Right },
-                new TextBlock { Text = $"Periodo: {v.PeriodLabel}", FontSize = 13, Foreground = Brush.Parse("#475569"), HorizontalAlignment = HorizontalAlignment.Right }
+                new TextBlock { Text = $"Período: {v.PeriodLabel}", FontSize = 13, Foreground = Brush.Parse("#475569"), HorizontalAlignment = HorizontalAlignment.Right }
             }
         };
         Grid.SetColumn(titleRight, 1);
@@ -251,16 +251,16 @@ public sealed class ReportPreviewWindow : Window
         stack.Children.Add(new Border { Height = 2, Background = Brush.Parse("#1E293B") });
 
         // Company Section
-        stack.Children.Add(CreateBand("Identificacao da Empresa"));
+        stack.Children.Add(CreateBand("Identificação da Empresa"));
         var compGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,250"), RowDefinitions = new RowDefinitions("Auto,Auto") };
-        compGrid.Children.Add(CreateTextLine($"Razao Social: {r10?.NomeContribuinte ?? "-"}", true, 0, 0));
-        compGrid.Children.Add(CreateTextLine($"Regime Tributario: {_activeCtx.TaxRegime}", false, 1, 0));
+        compGrid.Children.Add(CreateTextLine($"Razão Social: {r10?.NomeContribuinte ?? "-"}", true, 0, 0));
+        compGrid.Children.Add(CreateTextLine($"Regime Tributário: {_activeCtx.TaxRegime}", false, 1, 0));
         compGrid.Children.Add(CreateTextLine($"CNPJ: {(r10 is null ? "-" : TaxIdValidator.FormatCnpj(r10.Cnpj))}   |   IE: {r10?.Ie ?? "-"}", false, 0, 1));
-        compGrid.Children.Add(CreateTextLine("Documento: Sintegra (Convenio ICMS 57/95)", false, 1, 1));
+        compGrid.Children.Add(CreateTextLine("Documento: Sintegra (Convênio ICMS 57/95)", false, 1, 1));
         stack.Children.Add(compGrid);
 
         // Resumo do Periodo
-        stack.Children.Add(CreateBand("Resumo do Periodo"));
+        stack.Children.Add(CreateBand("Resumo do Período"));
         var summaryBox = new Border
         {
             BorderBrush = Brush.Parse("#CBD5E1"),
@@ -270,16 +270,16 @@ public sealed class ReportPreviewWindow : Window
         };
         var sGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*") };
         sGrid.Children.Add(CreateSummaryCell("Total de Entradas", $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalEntradasCents)}", "#FFFFFF", "#0F172A", 0, true));
-        sGrid.Children.Add(CreateSummaryCell("Total de Saidas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", "#FFFFFF", "#0F172A", 1, true));
-        sGrid.Children.Add(CreateSummaryCell("Saidas / Entradas",
+        sGrid.Children.Add(CreateSummaryCell("Total de Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(v.TotalSaidasCents)}", "#FFFFFF", "#0F172A", 1, true));
+        sGrid.Children.Add(CreateSummaryCell("Saídas / Entradas",
             v.RatioSaidaSobreEntradaPct.HasValue ? $"{v.RatioSaidaSobreEntradaPct.Value:N1}%" : "-",
             "#FFFFFF", "#1D4ED8", 2, true));
 
         bool hasMissing = _activeCtx.Audit is not null && v.XmlComprasOmissas > 0;
         string missText = _activeCtx.Audit is null
-            ? "XML nao carregado"
-            : (hasMissing ? $"{v.XmlComprasOmissas} (R$ {TaxIdValidator.FormatCentsBrl(v.XmlComprasOmissasCents)})" : "Todas lancadas");
-        sGrid.Children.Add(CreateSummaryCell("Compras Nao Lancadas (XML)",
+            ? "XML não carregado"
+            : (hasMissing ? $"{v.XmlComprasOmissas} (R$ {TaxIdValidator.FormatCentsBrl(v.XmlComprasOmissasCents)})" : "Todas lançadas");
+        sGrid.Children.Add(CreateSummaryCell("Compras Não Lançadas (XML)",
             missText,
             _activeCtx.Audit is null ? "#FFFFFF" : (hasMissing ? "#FEF2F2" : "#ECFDF5"),
             _activeCtx.Audit is null ? "#64748B" : (hasMissing ? "#B91C1C" : "#15803D"), 3, false));
@@ -289,7 +289,7 @@ public sealed class ReportPreviewWindow : Window
         // Monthly table (for Completo)
         if (_activeCtx.Mode == ReportMode.Completo)
         {
-            stack.Children.Add(CreateBand("Movimentacao Mes a Mes (Entradas x Saidas x Conferencia XML)"));
+            stack.Children.Add(CreateBand("Movimentação Mês a Mês (Entradas x Saídas x Conferência XML)"));
             var tableBorder = new Border
             {
                 BorderBrush = Brush.Parse("#CBD5E1"),
@@ -300,13 +300,13 @@ public sealed class ReportPreviewWindow : Window
             var tStack = new StackPanel();
             string cols = "65,98,90,98,98,84,*";
             var tHdr = new Grid { ColumnDefinitions = new ColumnDefinitions(cols) };
-            tHdr.Children.Add(CreateCell("Mes", true, 0, false));
+            tHdr.Children.Add(CreateCell("Mês", true, 0, false));
             tHdr.Children.Add(CreateCell("Compras", true, 1, true));
             tHdr.Children.Add(CreateCell("Outras Ent.", true, 2, true));
             tHdr.Children.Add(CreateCell("Total Entradas", true, 3, true));
-            tHdr.Children.Add(CreateCell("Total Saidas", true, 4, true));
-            tHdr.Children.Add(CreateCell("Saidas / Entr.", true, 5, true));
-            tHdr.Children.Add(CreateCell("Conferencia XML", true, 6, true));
+            tHdr.Children.Add(CreateCell("Total Saídas", true, 4, true));
+            tHdr.Children.Add(CreateCell("Saídas / Entr.", true, 5, true));
+            tHdr.Children.Add(CreateCell("Conferência XML", true, 6, true));
             tStack.Children.Add(new Border { Background = Brush.Parse("#F1F5F9"), Padding = new Thickness(10, 8), Child = tHdr });
 
             foreach (var m in v.MonthlyRows)
@@ -332,7 +332,7 @@ public sealed class ReportPreviewWindow : Window
                     }
                     else
                     {
-                        xmlLbl = "Todas lancadas";
+                        xmlLbl = "Todas lançadas";
                         xmlColor = "#15803D";
                     }
                 }
@@ -375,13 +375,13 @@ public sealed class ReportPreviewWindow : Window
         // Omitted Purchase Invoices Table (Completo + SomenteNotasNaoLancadas)
         if (_activeCtx.Mode is ReportMode.Completo or ReportMode.SomenteNotasNaoLancadas)
         {
-            stack.Children.Add(CreateBand("Notas Fiscais de Compra Nao Lancadas no Sintegra"));
+            stack.Children.Add(CreateBand("Notas Fiscais de Compra Não Lançadas no Sintegra"));
             var missingRows = v.XmlDocumentRows.Where(r => r.IsCriticalGap).ToList();
             if (_activeCtx.Audit is null)
             {
                 stack.Children.Add(new TextBlock
                 {
-                    Text = "Nenhum arquivo XML foi importado para conferir notas nao lancadas.",
+                    Text = "Nenhum arquivo XML foi importado para conferir notas não lançadas.",
                     FontSize = 12,
                     Foreground = Brush.Parse("#64748B")
                 });
@@ -390,7 +390,7 @@ public sealed class ReportPreviewWindow : Window
             {
                 stack.Children.Add(new TextBlock
                 {
-                    Text = "Todas as notas fiscais de compra encontradas nos XMLs do periodo constam lancadas no Sintegra.",
+                    Text = "Todas as notas fiscais de compra encontradas nos XMLs do período constam lançadas no Sintegra.",
                     FontSize = 12.5,
                     FontWeight = FontWeight.SemiBold,
                     Foreground = Brush.Parse("#15803D")
@@ -402,9 +402,9 @@ public sealed class ReportPreviewWindow : Window
                 var mStack = new StackPanel();
                 string mCols = "68,85,95,*,115";
                 var mHdr = new Grid { ColumnDefinitions = new ColumnDefinitions(mCols) };
-                mHdr.Children.Add(CreateCell("Mes", true, 0, false));
-                mHdr.Children.Add(CreateCell("Emissao", true, 1, false));
-                mHdr.Children.Add(CreateCell("Numero NF", true, 2, false));
+                mHdr.Children.Add(CreateCell("Mês", true, 0, false));
+                mHdr.Children.Add(CreateCell("Emissão", true, 1, false));
+                mHdr.Children.Add(CreateCell("Número NF", true, 2, false));
                 mHdr.Children.Add(CreateCell("Fornecedor", true, 3, false));
                 mHdr.Children.Add(CreateCell("Valor NF", true, 4, true));
                 mStack.Children.Add(new Border { Background = Brush.Parse("#FEF2F2"), Padding = new Thickness(10, 7), Child = mHdr });
@@ -443,7 +443,7 @@ public sealed class ReportPreviewWindow : Window
             string pCols = "40,95,*,50,80,115,65";
             var pHdr = new Grid { ColumnDefinitions = new ColumnDefinitions(pCols) };
             pHdr.Children.Add(CreateCell("#", true, 0, false));
-            pHdr.Children.Add(CreateCell("Codigo", true, 1, false));
+            pHdr.Children.Add(CreateCell("Código", true, 1, false));
             pHdr.Children.Add(CreateCell("Produto", true, 2, false));
             pHdr.Children.Add(CreateCell("Unid.", true, 3, false));
             pHdr.Children.Add(CreateCell("Qtd.", true, 4, true));
@@ -479,13 +479,13 @@ public sealed class ReportPreviewWindow : Window
         var footGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         footGrid.Children.Add(new TextBlock
         {
-            Text = $"OpenSintegra Contabil v{_activeCtx.AppVersion}",
+            Text = $"OpenSintegra Contábil v{_activeCtx.AppVersion}",
             FontSize = 11.5,
             Foreground = Brush.Parse("#64748B")
         });
         var dtText = new TextBlock
         {
-            Text = $"Relatorio gerado em {DateTime.Now:dd/MM/yyyy} as {DateTime.Now:HH:mm}",
+            Text = $"Relatório gerado em {DateTime.Now:dd/MM/yyyy} às {DateTime.Now:HH:mm}",
             FontSize = 11.5,
             Foreground = Brush.Parse("#64748B")
         };
@@ -562,7 +562,7 @@ public sealed class ReportPreviewWindow : Window
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Salvar Relatorio em PDF",
+            Title = "Salvar Relatório em PDF",
             SuggestedFileName = $"Relatorio_Sintegra_{_activeCtx.ScopedView.SelectedYearMonth ?? "Anual"}.pdf",
             DefaultExtension = "pdf",
             FileTypeChoices = new[] { new FilePickerFileType("Documento PDF") { Patterns = new[] { "*.pdf" } } }

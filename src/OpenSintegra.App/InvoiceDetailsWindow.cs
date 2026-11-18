@@ -24,7 +24,7 @@ public sealed class InvoiceDetailsWindow : Window
         XmlAuditDocumentRow? xmlMatch = null)
     {
         string numDisplay = invoice.Numero.TrimStart('0').PadLeft(1, '0');
-        Title = $"Detalhes da Nota Fiscal {numDisplay} (Serie {invoice.Serie.Trim()})";
+        Title = $"Detalhes da Nota Fiscal {numDisplay} (Série {invoice.Serie.Trim()})";
         Icon = VectorIcons.AppWindowIcon;
         Width = 880;
         Height = 620;
@@ -65,7 +65,7 @@ public sealed class InvoiceDetailsWindow : Window
         var hStack = new StackPanel { Spacing = 10 };
 
         var topTitleGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
-        string direction = TaxIdValidator.IsEntradaCfop(invoice.Cfop) ? "Entrada (Compra / Aquisicao)" : "Saida (Emissao Propria)";
+        string direction = TaxIdValidator.IsEntradaCfop(invoice.Cfop) ? "Entrada (Compra / Aquisição)" : "Saída (Emissão Própria)";
         topTitleGrid.Children.Add(new StackPanel
         {
             Spacing = 2,
@@ -73,7 +73,7 @@ public sealed class InvoiceDetailsWindow : Window
             {
                 new TextBlock
                 {
-                    Text = $"NF {numDisplay}  |  Modelo {invoice.Modelo}  |  Serie '{invoice.Serie.Trim()}'",
+                    Text = $"NF {numDisplay}  |  Modelo {invoice.Modelo}  |  Série '{invoice.Serie.Trim()}'",
                     FontSize = 16,
                     FontWeight = FontWeight.Bold,
                     Foreground = Brush.Parse("#0F172A")
@@ -122,13 +122,13 @@ public sealed class InvoiceDetailsWindow : Window
             infoGrid.Children.Add(sp);
         }
 
-        AddKv(0, 0, "Data Emissao / Entrada", TaxIdValidator.FormatDateBr(invoice.DataEmissao));
+        AddKv(0, 0, "Data Emissão / Entrada", TaxIdValidator.FormatDateBr(invoice.DataEmissao));
         AddKv(1, 0, "CNPJ Emit./Dest.", TaxIdValidator.FormatCnpj(invoice.Cnpj));
-        AddKv(2, 0, "Inscricao Estadual / UF", $"{invoice.Ie.Trim()} ({invoice.Uf})");
-        AddKv(3, 0, "Emitente (P/T)", invoice.Emitente == "P" ? "Proprio (P)" : "Terceiros (T)");
+        AddKv(2, 0, "Inscrição Estadual / UF", $"{invoice.Ie.Trim()} ({invoice.Uf})");
+        AddKv(3, 0, "Emitente (P/T)", invoice.Emitente == "P" ? "Próprio (P)" : "Terceiros (T)");
 
         AddKv(0, 1, "Valor Total da Nota", $"R$ {TaxIdValidator.FormatCentsBrl(invoice.ValorTotalCents)}", "#1D4ED8");
-        AddKv(1, 1, "Base de Calculo ICMS", $"R$ {TaxIdValidator.FormatCentsBrl(invoice.BaseIcmsCents)}");
+        AddKv(1, 1, "Base de Cálculo ICMS", $"R$ {TaxIdValidator.FormatCentsBrl(invoice.BaseIcmsCents)}");
         AddKv(2, 1, "Valor do ICMS", $"R$ {TaxIdValidator.FormatCentsBrl(invoice.ValorIcmsCents)}");
         AddKv(3, 1, "Isentas / Outras", $"R$ {TaxIdValidator.FormatCentsBrl(invoice.IsentaNaoTribCents)} / R$ {TaxIdValidator.FormatCentsBrl(invoice.OutrasCents)}");
 
@@ -145,7 +145,7 @@ public sealed class InvoiceDetailsWindow : Window
                 Padding = new Thickness(10, 6),
                 Child = new TextBlock
                 {
-                    Text = $"Conferencia XML: {xmlMatch.MatchStatus} - Fornecedor: {xmlMatch.EmitNome} (Valor XML: R$ {TaxIdValidator.FormatCentsBrl(xmlMatch.XmlValorCents)})",
+                    Text = $"Conferência XML: {xmlMatch.MatchStatus} - Fornecedor: {xmlMatch.EmitNome} (Valor XML: R$ {TaxIdValidator.FormatCentsBrl(xmlMatch.XmlValorCents)})",
                     FontSize = 11.5,
                     Foreground = Brush.Parse("#1E3A8A")
                 }
@@ -210,8 +210,8 @@ public sealed class InvoiceDetailsWindow : Window
         var hdr = MakeGrid();
         hdr.Margin = new Thickness(0, 0, 14, 0);
         AddCell(hdr, 0, "Item", true, true, "#334155");
-        AddCell(hdr, 1, "Codigo", false, true, "#334155");
-        AddCell(hdr, 2, "Descricao (Registro 75)", false, true, "#334155");
+        AddCell(hdr, 1, "Código", false, true, "#334155");
+        AddCell(hdr, 2, "Descrição (Registro 75)", false, true, "#334155");
         AddCell(hdr, 3, "CST", false, true, "#334155");
         AddCell(hdr, 4, "CFOP", false, true, "#334155");
         AddCell(hdr, 5, "Qtd.", true, true, "#334155");
@@ -259,8 +259,8 @@ public sealed class InvoiceDetailsWindow : Window
                     if (it is null) return new Panel();
                     string desc = it.NumItem switch
                     {
-                        "991" => "FRETE (ITEM ACESSORIO 991)",
-                        "992" => "SEGURO (ITEM ACESSORIO 992)",
+                        "991" => "FRETE (ITEM ACESSÓRIO 991)",
+                        "992" => "SEGURO (ITEM ACESSÓRIO 992)",
                         "999" => "OUTRAS DESPESAS / ST (ITEM 999)",
                         _ => r75Map.TryGetValue(it.CodProduto, out var r75) ? r75.Descricao : $"PRODUTO {it.CodProduto}"
                     };

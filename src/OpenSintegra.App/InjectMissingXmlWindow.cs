@@ -24,7 +24,7 @@ public sealed class InjectMissingXmlWindow : Window
         string buyerUf,
         string companyTaxRegime)
     {
-        Title = $"Lancar Notas Faltantes no Sintegra ({targets.Count})";
+        Title = $"Lançar Notas Faltantes no Sintegra ({targets.Count})";
         Icon = VectorIcons.AppWindowIcon;
         Width = 820;
         Height = 560;
@@ -59,14 +59,14 @@ public sealed class InjectMissingXmlWindow : Window
                 {
                     new TextBlock
                     {
-                        Text = $"Lancar {targets.Count} Nota(s) Fiscal(is) de Compra diretamente no Sintegra",
+                        Text = $"Lançar {targets.Count} Nota(s) Fiscal(is) de Compra diretamente no Sintegra",
                         FontSize = 15,
                         FontWeight = FontWeight.Bold,
                         Foreground = Brush.Parse("#0F172A")
                     },
                     new TextBlock
                     {
-                        Text = $"Valor total a acrescentar nas Entradas: R$ {TaxIdValidator.FormatCentsBrl(totalVal)}. O Registro 90 sera recalculado automaticamente.",
+                        Text = $"Valor total a acrescentar nas Entradas: R$ {TaxIdValidator.FormatCentsBrl(totalVal)}. O Registro 90 será recalculado automaticamente.",
                         FontSize = 12,
                         Foreground = Brush.Parse("#475569"),
                         TextWrapping = TextWrapping.Wrap
@@ -80,7 +80,7 @@ public sealed class InjectMissingXmlWindow : Window
         // Options Checkboxes
         var chkZeroIcms = new CheckBox
         {
-            Content = $"Zerar Base e Valor de ICMS nas entradas (padrao {companyTaxRegime})",
+            Content = $"Zerar Base e Valor de ICMS nas entradas (padrão {companyTaxRegime})",
             IsChecked = defaultZeroIcms,
             FontSize = 12
         };
@@ -121,7 +121,7 @@ public sealed class InjectMissingXmlWindow : Window
             Grid.SetColumn(tb, c);
             hdr.Children.Add(tb);
         }
-        AddHdr(0, "Emissao");
+        AddHdr(0, "Emissão");
         AddHdr(1, "Nota");
         AddHdr(2, "Fornecedor");
         AddHdr(3, "Valor Total");
@@ -188,7 +188,7 @@ public sealed class InjectMissingXmlWindow : Window
 
         var btnConfirm = new Button
         {
-            Content = "Confirmar Lancamento no Sintegra",
+            Content = "Confirmar Lançamento no Sintegra",
             Background = Brush.Parse("#16A34A"),
             BorderThickness = new Thickness(0),
             Foreground = Brushes.White,

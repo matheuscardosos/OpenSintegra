@@ -279,23 +279,23 @@ public static class SintegraAutoFixer
                 workingLines.Add(("90", null, PadOrTrimExact(reg90Line)));
             }
 
-            appliedFixes.Add(new AppliedFix("FIX-008", "Ordenacao canonica dos registros e recalculo integral do Registro 90.", numReg90Lines));
+            appliedFixes.Add(new AppliedFix("FIX-008", "Ordenação canônica dos registros e recálculo integral do Registro 90.", numReg90Lines));
         }
 
         if (crlfFixed > 0)
-            appliedFixes.Insert(0, new AppliedFix("FIX-001", "Normalizacao de quebras de linha para CRLF (0x0D 0x0A).", crlfFixed));
+            appliedFixes.Insert(0, new AppliedFix("FIX-001", "Normalização de quebras de linha para CRLF (0x0D 0x0A).", crlfFixed));
         if (lenFixed > 0)
-            appliedFixes.Add(new AppliedFix("FIX-002", "Ajuste do comprimento fisico das linhas para 126 colunas.", lenFixed));
+            appliedFixes.Add(new AppliedFix("FIX-002", "Ajuste do comprimento físico das linhas para 126 colunas.", lenFixed));
         if (removedOrphan75 > 0)
-            appliedFixes.Add(new AppliedFix("FIX-003", "Remocao de Registros 75 orfaos sem movimentacao no periodo.", removedOrphan75));
+            appliedFixes.Add(new AppliedFix("FIX-003", "Remoção de Registros 75 órfãos sem movimentação no período.", removedOrphan75));
         if (synthesized75 > 0)
-            appliedFixes.Add(new AppliedFix("FIX-004", "Geracao automatica de Registros 75 faltantes para produtos movimentados.", synthesized75));
+            appliedFixes.Add(new AppliedFix("FIX-004", "Geração automática de Registros 75 faltantes para produtos movimentados.", synthesized75));
         if (aligned75Dates > 0)
-            appliedFixes.Add(new AppliedFix("FIX-005", "Sincronizacao das datas de validade do Registro 75 com o Registro 10.", aligned75Dates));
+            appliedFixes.Add(new AppliedFix("FIX-005", "Sincronização das datas de validade do Registro 75 com o Registro 10.", aligned75Dates));
         if (deduped75 > 0)
-            appliedFixes.Add(new AppliedFix("FIX-006", "Remocao de Registros 75 com codigo de produto duplicado.", deduped75));
+            appliedFixes.Add(new AppliedFix("FIX-006", "Remoção de Registros 75 com código de produto duplicado.", deduped75));
         if (cancelledFixed > 0)
-            appliedFixes.Add(new AppliedFix("FIX-007", "Zeramento de valores em Notas Fiscais canceladas (Situacao S).", cancelledFixed));
+            appliedFixes.Add(new AppliedFix("FIX-007", "Zeramento de valores em Notas Fiscais canceladas (Situação S).", cancelledFixed));
 
         byte[] fixedBytes = EncodeLinesCrlf(workingLines.Select(x => x.Text));
         string fixedContent = Encoding.Latin1.GetString(fixedBytes);

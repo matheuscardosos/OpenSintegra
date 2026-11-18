@@ -40,7 +40,7 @@ public static class SintegraValidator
                 diagnostics.Add(new Diagnostic(
                     "SIN-SYN-003", Severity.Error, line.LineNumber,
                     1, Math.Max(1, line.CharLen), line.RecordType, "Comprimento do Registro",
-                    $"Comprimento da linha invalido: {line.CharLen} colunas encontradas (esperado 126).",
+                    $"Comprimento da linha inválido: {line.CharLen} colunas encontradas (esperado 126).",
                     $"{line.CharLen} colunas", "126 colunas", safeFixLen));
             }
         }
@@ -75,22 +75,22 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R10-001", Severity.Error, r10.Line, 3, 16, "10", "CNPJ",
-                    "Digito verificador ou formato do CNPJ do contribuinte invalido.",
-                    r10.Cnpj, "CNPJ valido (14 digitos)", false));
+                    "Dígito verificador ou formato do CNPJ do contribuinte inválido.",
+                    r10.Cnpj, "CNPJ válido (14 dígitos)", false));
             }
             if (!TaxIdValidator.IsValidUf(r10.Uf))
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R10-002", Severity.Error, r10.Line, 96, 97, "10", "UF",
-                    "Unidade da Federacao invalida no Registro 10.",
-                    r10.Uf, "UF valida (ex: MG, SP, RS)", false));
+                    "Unidade da Federação inválida no Registro 10.",
+                    r10.Uf, "UF válida (ex: MG, SP, RS)", false));
             }
             else if (!TaxIdValidator.ValidateIe(r10.Uf, r10.Ie))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-R10-002", Severity.Error, r10.Line, 17, 30, "10", "Inscricao Estadual",
-                    $"Inscricao Estadual invalida para a UF {r10.Uf.Trim()}.",
-                    r10.Ie, $"IE valida para {r10.Uf.Trim()}", false));
+                    "SIN-R10-002", Severity.Error, r10.Line, 17, 30, "10", "Inscrição Estadual",
+                    $"Inscrição Estadual inválida para a UF {r10.Uf.Trim()}.",
+                    r10.Ie, $"IE válida para {r10.Uf.Trim()}", false));
             }
 
             bool diOk = TaxIdValidator.ValidateDateYyyyMmDd(r10.DataInicial);
@@ -98,8 +98,8 @@ public static class SintegraValidator
             if (!diOk || !dfOk || string.CompareOrdinal(r10.DataInicial, r10.DataFinal) > 0)
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-R10-003", Severity.Error, r10.Line, 108, 123, "10", "Periodo",
-                    "Data inicial ou final de competencia invalida no Registro 10.",
+                    "SIN-R10-003", Severity.Error, r10.Line, 108, 123, "10", "Período",
+                    "Data inicial ou final de competência inválida no Registro 10.",
                     $"{r10.DataInicial} a {r10.DataFinal}", "AAAAMMDD inicial <= final", false));
             }
             else
@@ -108,16 +108,16 @@ public static class SintegraValidator
                 {
                     int monthsSpan = CountMonthsInclusive(r10.DataInicial, r10.DataFinal);
                     diagnostics.Add(new Diagnostic(
-                        "SIN-R10-006", Severity.Info, r10.Line, 108, 123, "10", "Periodo Consolidado Multi-Mes",
-                        $"Arquivo Sintegra consolidado abrangendo {monthsSpan} mes(es) ({TaxIdValidator.FormatDateBr(r10.DataInicial)} a {TaxIdValidator.FormatDateBr(r10.DataFinal)}). O validador legado da SEFAZ aceita apenas 1 mes por arquivo, mas o OpenSintegra valida e audita todo o periodo.",
+                        "SIN-R10-006", Severity.Info, r10.Line, 108, 123, "10", "Período Consolidado Multi-Mês",
+                        $"Arquivo Sintegra consolidado abrangendo {monthsSpan} mês(es) ({TaxIdValidator.FormatDateBr(r10.DataInicial)} a {TaxIdValidator.FormatDateBr(r10.DataFinal)}). O validador legado da SEFAZ aceita apenas 1 mês por arquivo, mas o OpenSintegra valida e audita todo o período.",
                         $"{monthsSpan} meses", "Leitura anual/acumulada habilitada", false));
                 }
 
                 if (string.CompareOrdinal(r10.DataInicial, "20040101") >= 0 && r10.CodEstrutura != "3")
                 {
                     diagnostics.Add(new Diagnostic(
-                        "SIN-R10-004", Severity.Error, r10.Line, 124, 124, "10", "Codigo de Estrutura",
-                        "Para arquivos a partir de 01/01/2004 o codigo de estrutura (pos 124) deve ser 3 (Convenio 76/03).",
+                        "SIN-R10-004", Severity.Error, r10.Line, 124, 124, "10", "Código de Estrutura",
+                        "Para arquivos a partir de 01/01/2004 o código de estrutura (pos 124) deve ser 3 (Convênio 76/03).",
                         r10.CodEstrutura, "3", false));
                 }
             }
@@ -125,15 +125,15 @@ public static class SintegraValidator
             if (r10.CodNatureza is not ("1" or "2" or "3"))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-R10-005", Severity.Error, r10.Line, 125, 125, "10", "Codigo da Natureza",
-                    "Codigo da natureza das operacoes invalido (pos 125).",
+                    "SIN-R10-005", Severity.Error, r10.Line, 125, 125, "10", "Código da Natureza",
+                    "Código da natureza das operações inválido (pos 125).",
                     r10.CodNatureza, "1, 2 ou 3", false));
             }
             if (r10.CodFinalidade is not ("1" or "2" or "3" or "5"))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-R10-005", Severity.Error, r10.Line, 126, 126, "10", "Codigo da Finalidade",
-                    "Codigo da finalidade do arquivo invalido (pos 126).",
+                    "SIN-R10-005", Severity.Error, r10.Line, 126, 126, "10", "Código da Finalidade",
+                    "Código da finalidade do arquivo inválido (pos 126).",
                     r10.CodFinalidade, "1, 2, 3 ou 5", false));
             }
         }
@@ -144,8 +144,8 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R11-001", Severity.Warning, r11.Line, 79, 86, "11", "CEP",
-                    "CEP invalido ou zerado no Registro 11.",
-                    r11.Cep, "8 digitos numericos", false));
+                    "CEP inválido ou zerado no Registro 11.",
+                    r11.Cep, "8 dígitos numéricos", false));
             }
         }
 
@@ -159,36 +159,36 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R50-001", Severity.Error, r50.Line, 3, 16, "50", "CNPJ/CPF",
-                    $"CNPJ/CPF invalido na Nota Fiscal {r50.Numero.Trim()}.",
-                    r50.Cnpj, "CNPJ ou CPF valido", false));
+                    $"CNPJ/CPF inválido na Nota Fiscal {r50.Numero.Trim()}.",
+                    r50.Cnpj, "CNPJ ou CPF válido", false));
             }
             if (!TaxIdValidator.IsValidUf(r50.Uf) || !TaxIdValidator.ValidateIe(r50.Uf, r50.Ie))
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R50-001", Severity.Error, r50.Line, 17, 40, "50", "IE / UF",
-                    $"Inscricao Estadual ou UF invalida na NF {r50.Numero.Trim()} ({r50.Uf}).",
-                    $"{r50.Ie} / {r50.Uf}", "IE compativel com a UF", false));
+                    $"Inscrição Estadual ou UF inválida na NF {r50.Numero.Trim()} ({r50.Uf}).",
+                    $"{r50.Ie} / {r50.Uf}", "IE compatível com a UF", false));
             }
             if (!TaxIdValidator.ValidateDateYyyyMmDd(r50.DataEmissao))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-R50-002", Severity.Error, r50.Line, 31, 38, "50", "Data de Emissao",
-                    "Data de emissao/recebimento invalida no Registro 50.",
+                    "SIN-R50-002", Severity.Error, r50.Line, 31, 38, "50", "Data de Emissão",
+                    "Data de emissão/recebimento inválida no Registro 50.",
                     r50.DataEmissao, "AAAAMMDD", false));
             }
             if (!TaxIdValidator.ValidModels50.Contains(r50.Modelo) || !TaxIdValidator.ValidateCfop(r50.Cfop))
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R50-003", Severity.Error, r50.Line, 41, 55, "50", "Modelo / CFOP",
-                    "Modelo de documento fiscal ou CFOP invalido no Registro 50.",
-                    $"Mod={r50.Modelo} CFOP={r50.Cfop}", "Modelo e CFOP validos", false));
+                    "Modelo de documento fiscal ou CFOP inválido no Registro 50.",
+                    $"Mod={r50.Modelo} CFOP={r50.Cfop}", "Modelo e CFOP válidos", false));
             }
 
             if (r50.Situacao == "S" && (r50.ValorTotalCents != 0 || r50.BaseIcmsCents != 0 || r50.ValorIcmsCents != 0))
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R50-004", Severity.Error, r50.Line, 57, 126, "50", "Nota Cancelada com Valores",
-                    "Nota Fiscal cancelada (Situacao = S) deve ter todos os valores contabeis e fiscais zerados.",
+                    "Nota Fiscal cancelada (Situação = S) deve ter todos os valores contábeis e fiscais zerados.",
                     $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorTotalCents)}", "R$ 0,00", true));
             }
 
@@ -198,8 +198,8 @@ public static class SintegraValidator
                 if (Math.Abs(r50.ValorIcmsCents - expectedIcms) > 2)
                 {
                     diagnostics.Add(new Diagnostic(
-                        "SIN-R50-005", Severity.Warning, r50.Line, 70, 125, "50", "Calculo ICMS",
-                        $"Divergencia matematica no calculo do ICMS da NF {r50.Numero.Trim()} (Base * Aliquota).",
+                        "SIN-R50-005", Severity.Warning, r50.Line, 70, 125, "50", "Cálculo ICMS",
+                        $"Divergência matemática no cálculo do ICMS da NF {r50.Numero.Trim()} (Base * Alíquota).",
                         $"R$ {TaxIdValidator.FormatCentsBrl(r50.ValorIcmsCents)}",
                         $"R$ {TaxIdValidator.FormatCentsBrl(expectedIcms)}", false));
                 }
@@ -210,8 +210,8 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-REL-001", Severity.Error, r50.Line, 3, 55, "50", "Chave Duplicada",
-                    $"Registro 50 duplicado para a NF {r50.Numero.Trim()} CFOP {r50.Cfop} (ja declarado na linha {prevLine}).",
-                    $"NF {r50.Numero.Trim()} CFOP {r50.Cfop}", "Chave unica por CFOP e Aliquota", false));
+                    $"Registro 50 duplicado para a NF {r50.Numero.Trim()} CFOP {r50.Cfop} (já declarado na linha {prevLine}).",
+                    $"NF {r50.Numero.Trim()} CFOP {r50.Cfop}", "Chave única por CFOP e Alíquota", false));
             }
             else
             {
@@ -241,8 +241,8 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R75-001", Severity.Error, r75.Line, 19, 99, "75", "Cadastro de Produto",
-                    "Codigo, descricao ou unidade de medida em branco no Registro 75.",
-                    $"Cod='{r75.CodProduto}' Desc='{r75.Descricao}'", "Campos obrigatorios preenchidos", false));
+                    "Código, descrição ou unidade de medida em branco no Registro 75.",
+                    $"Cod='{r75.CodProduto}' Desc='{r75.Descricao}'", "Campos obrigatórios preenchidos", false));
             }
             if (!string.IsNullOrEmpty(r10Di) && !string.IsNullOrEmpty(r10Df))
             {
@@ -254,7 +254,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-R75-002", Severity.Warning, r75.Line, 3, 18, "75", "Validade do Produto",
-                        $"Periodo de validade do Registro 75 (produto '{r75.CodProduto}') difere do periodo do Registro 10.",
+                        $"Período de validade do Registro 75 (produto '{r75.CodProduto}') difere do período do Registro 10.",
                         $"{r75.DataInicial} a {r75.DataFinal}", $"{r10Di} a {r10Df}", true));
                 }
             }
@@ -275,8 +275,8 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-007", Severity.Error, entries[i].Line, 19, 32, "75", "Produto Duplicado",
-                        $"Produto '{prodCode}' declarado em duplicidade no Registro 75 (primeira ocorrencia na linha {entries[0].Line}).",
-                        prodCode, "Cadastro unico por codigo de produto", true));
+                        $"Produto '{prodCode}' declarado em duplicidade no Registro 75 (primeira ocorrência na linha {entries[0].Line}).",
+                        prodCode, "Cadastro único por código de produto", true));
                 }
             }
         }
@@ -299,8 +299,8 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R54-001", Severity.Error, r54.Line, 28, 51, "54", "CFOP / Produto",
-                    $"CFOP ou codigo do produto invalido no item {r54.NumItem} da NF {r54.Numero.Trim()}.",
-                    $"CFOP={r54.Cfop} Prod='{r54.CodProduto}'", "CFOP valido e produto informado", false));
+                    $"CFOP ou código do produto inválido no item {r54.NumItem} da NF {r54.Numero.Trim()}.",
+                    $"CFOP={r54.Cfop} Prod='{r54.CodProduto}'", "CFOP válido e produto informado", false));
             }
 
             if (!isAccessory && !string.IsNullOrEmpty(r54.CodProduto))
@@ -310,7 +310,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-005", Severity.Error, r54.Line, 38, 51, "54", "Produto Sem Registro 75",
-                        $"Nao existe Registro 75 correspondente para o produto '{r54.CodProduto}' informado no Registro 54 (NF {r54.Numero.Trim()}).",
+                        $"Não existe Registro 75 correspondente para o produto '{r54.CodProduto}' informado no Registro 54 (NF {r54.Numero.Trim()}).",
                         r54.CodProduto, "Cadastrar produto no Registro 75", true));
                 }
             }
@@ -340,7 +340,7 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-REL-003", Severity.Error, items[0].Line, 35, 37, "54", "Item de Despesa Isolado",
-                    $"A NF {items[0].Numero.Trim()} possui item de despesa acessoria (991/992/999) sem nenhum item de mercadoria normal.",
+                    $"A NF {items[0].Numero.Trim()} possui item de despesa acessória (991/992/999) sem nenhum item de mercadoria normal.",
                     items[0].NumItem, "Pelo menos um item normal (001..990)", false));
             }
 
@@ -360,7 +360,7 @@ public static class SintegraValidator
                         var sev = diff <= 100 ? Severity.Warning : Severity.Error;
                         diagnostics.Add(new Diagnostic(
                             "SIN-REL-004", sev, headers[0].Line, 57, 69, "50", "Total Capa 50 vs Soma Itens 54",
-                            $"Divergencia entre o Valor Contabil no Registro 50 (R$ {TaxIdValidator.FormatCentsBrl(sumR50)}) e a soma liquida dos itens no Registro 54 (R$ {TaxIdValidator.FormatCentsBrl(sumR54)}) na NF {headers[0].Numero.Trim()}.",
+                            $"Divergência entre o Valor Contábil no Registro 50 (R$ {TaxIdValidator.FormatCentsBrl(sumR50)}) e a soma líquida dos itens no Registro 54 (R$ {TaxIdValidator.FormatCentsBrl(sumR54)}) na NF {headers[0].Numero.Trim()}.",
                             $"R$ {TaxIdValidator.FormatCentsBrl(sumR50)}",
                             $"R$ {TaxIdValidator.FormatCentsBrl(sumR54)}", false));
                     }
@@ -377,7 +377,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-005", Severity.Error, r60d.Line, 32, 45, "60", "Produto Sem Registro 75",
-                        $"Nao existe Registro 75 para o produto '{r60d.CodProduto}' informado no Registro 60D.",
+                        $"Não existe Registro 75 para o produto '{r60d.CodProduto}' informado no Registro 60D.",
                         r60d.CodProduto, "Produto cadastrado no Registro 75", true));
                 }
             }
@@ -392,7 +392,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-005", Severity.Error, r60i.Line, 43, 56, "60", "Produto Sem Registro 75",
-                        $"Nao existe Registro 75 para o produto '{r60i.CodProduto}' informado no Registro 60I.",
+                        $"Não existe Registro 75 para o produto '{r60i.CodProduto}' informado no Registro 60I.",
                         r60i.CodProduto, "Produto cadastrado no Registro 75", true));
                 }
             }
@@ -407,7 +407,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-005", Severity.Error, r74.Line, 11, 24, "74", "Produto Sem Registro 75",
-                        $"Nao existe Registro 75 para o produto '{r74.CodProduto}' informado no Inventario (Registro 74).",
+                        $"Não existe Registro 75 para o produto '{r74.CodProduto}' informado no Inventário (Registro 74).",
                         r74.CodProduto, "Produto cadastrado no Registro 75", true));
                 }
             }
@@ -422,7 +422,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-005", Severity.Error, r60r.Line, 10, 23, "60R", "Produto Sem Registro 75",
-                        $"Nao existe Registro 75 para o produto '{r60r.CodProduto}' informado no Registro 60R.",
+                        $"Não existe Registro 75 para o produto '{r60r.CodProduto}' informado no Registro 60R.",
                         r60r.CodProduto, "Produto cadastrado no Registro 75", true));
                 }
             }
@@ -434,7 +434,7 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R61-001", Severity.Error, r61.Line, 31, 38, "61", "Data Registro 61",
-                    "Data de emissao invalida no Registro 61.",
+                    "Data de emissão inválida no Registro 61.",
                     r61.DataEmissao, "AAAAMMDD", false));
             }
             if (long.TryParse(r61.NumInicialOrdem.Trim(), out long ini) &&
@@ -443,7 +443,7 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-R61-002", Severity.Error, r61.Line, 46, 57, "61", "Ordem Inicial/Final (Reg 61)",
-                    $"Numero final ({fin}) menor que numero inicial ({ini}) no Registro 61.",
+                    $"Número final ({fin}) menor que número inicial ({ini}) no Registro 61.",
                     $"{ini}..{fin}", "Inicial <= Final", false));
             }
         }
@@ -453,8 +453,8 @@ public static class SintegraValidator
             if (!TaxIdValidator.ValidateMmYyyy(r61r.MesAno))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-R61R-001", Severity.Error, r61r.Line, 4, 9, "61R", "Mes/Ano 61R",
-                    "Mes e ano de emissao invalidos no Registro 61R.",
+                    "SIN-R61R-001", Severity.Error, r61r.Line, 4, 9, "61R", "Mês/Ano 61R",
+                    "Mês e ano de emissão inválidos no Registro 61R.",
                     r61r.MesAno, "MMAAAA", false));
             }
             if (!string.IsNullOrEmpty(r61r.CodProduto))
@@ -464,7 +464,7 @@ public static class SintegraValidator
                 {
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-005", Severity.Error, r61r.Line, 10, 23, "61R", "Produto Sem Registro 75",
-                        $"Nao existe Registro 75 para o produto '{r61r.CodProduto}' informado no Registro 61R (NFC-e/Consumidor).",
+                        $"Não existe Registro 75 para o produto '{r61r.CodProduto}' informado no Registro 61R (NFC-e/Consumidor).",
                         r61r.CodProduto, "Cadastrar produto no Registro 75", true));
                 }
             }
@@ -479,9 +479,9 @@ public static class SintegraValidator
             if (!string.IsNullOrEmpty(r75.CodProduto) && !productMovementCounts.ContainsKey(r75.CodProduto))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-REL-006", Severity.Error, r75.Line, 19, 32, "75", "Produto Orfao no 75",
-                    $"Nao existe registro 54, 57, 60D, 60I, 60R, 61R, 74, 77 ou 86 referenciando o produto '{r75.CodProduto}' declarado neste Registro 75.",
-                    r75.CodProduto, "Remover Registro 75 sem movimento no periodo", true));
+                    "SIN-REL-006", Severity.Error, r75.Line, 19, 32, "75", "Produto Órfão no 75",
+                    $"Não existe registro 54, 57, 60D, 60I, 60R, 61R, 74, 77 ou 86 referenciando o produto '{r75.CodProduto}' declarado neste Registro 75.",
+                    r75.CodProduto, "Remover Registro 75 sem movimento no período", true));
             }
         }
 
@@ -494,8 +494,8 @@ public static class SintegraValidator
             if (!r60mKeys.Contains($"{r60a.DataEmissao}|{r60a.NumSerieFab}"))
             {
                 diagnostics.Add(new Diagnostic(
-                    "SIN-REL-008", Severity.Error, r60a.Line, 4, 31, "60", "Vinculo 60M",
-                    $"Registro 60A (ECF serie {r60a.NumSerieFab}) sem Registro 60M correspondente na data {r60a.DataEmissao}.",
+                    "SIN-REL-008", Severity.Error, r60a.Line, 4, 31, "60", "Vínculo 60M",
+                    $"Registro 60A (ECF série {r60a.NumSerieFab}) sem Registro 60M correspondente na data {r60a.DataEmissao}.",
                     $"{r60a.DataEmissao} / {r60a.NumSerieFab}", "Registro 60M correspondente", false));
             }
         }
@@ -508,7 +508,7 @@ public static class SintegraValidator
             {
                 diagnostics.Add(new Diagnostic(
                     "SIN-REL-009", Severity.Error, r90.Line, 3, 30, "90", "CNPJ / IE do Registro 90",
-                    "CNPJ ou Inscricao Estadual do Registro 90 diverge do Registro 10.",
+                    "CNPJ ou Inscrição Estadual do Registro 90 diverge do Registro 10.",
                     $"{r90.Cnpj} / {r90.Ie}", $"{r10Header.Cnpj} / {r10Header.Ie}", true));
             }
             foreach (var c in r90.Counters)
@@ -519,7 +519,7 @@ public static class SintegraValidator
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-011", Severity.Warning, r90.Line, 31, 120, "90",
                         $"Totalizador Zerado Tipo {c.TipoATotalizar}",
-                        $"Totalizador do Registro {c.TipoATotalizar} no Registro 90 esta zerado (00000000). O Convenio ICMS 57/95 (regra 2192) nao permite totalizadores zerados.",
+                        $"Totalizador do Registro {c.TipoATotalizar} no Registro 90 está zerado (00000000). O Convênio ICMS 57/95 (regra 2192) não permite totalizadores zerados.",
                         $"{c.TipoATotalizar}00000000", "Remover totalizadores zerados via Auto-Fix", true));
                 }
             }
@@ -535,7 +535,7 @@ public static class SintegraValidator
                     diagnostics.Add(new Diagnostic(
                         "SIN-REL-009", Severity.Error, r90RefLine, 31, 120, "90",
                         $"Totalizador Tipo {recType}",
-                        $"Totalizador do Registro {recType} no Registro 90 declara {declOpt}, mas existem {physCount} linhas fisicas.",
+                        $"Totalizador do Registro {recType} no Registro 90 declara {declOpt}, mas existem {physCount} linhas físicas.",
                         declOpt.ToString(), physCount.ToString(), true));
                 }
                 continue;
@@ -554,7 +554,7 @@ public static class SintegraValidator
                 diagnostics.Add(new Diagnostic(
                     "SIN-REL-009", Severity.Error, r90RefLine, 31, 120, "90",
                     $"Totalizador Tipo {recType}",
-                    $"Totalizador do Registro {recType} no Registro 90 declara {decl}, mas existem {physCount} linhas fisicas.",
+                    $"Totalizador do Registro {recType} no Registro 90 declara {decl}, mas existem {physCount} linhas físicas.",
                     decl.ToString(), physCount.ToString(), true));
             }
         }
@@ -606,9 +606,9 @@ public static class SintegraValidator
                     long missing = arr[i + 1] - arr[i] - 1;
                     sequenceGaps.Add(new SequenceGap(parts[0], parts[1], arr[i] + 1, arr[i + 1] - 1, missing));
                     diagnostics.Add(new Diagnostic(
-                        "SIN-REL-010", Severity.Info, 1, 46, 51, "50", "Sequencia de Numeracao Propria",
-                        $"Salto de numeracao em notas de emissao propria (Mod {parts[0]} Serie '{parts[1]}'): {missing} nota(s) ausente(s) entre {arr[i] + 1} e {arr[i + 1] - 1}.",
-                        $"{arr[i]} -> {arr[i + 1]}", "Conferir inutilizacao ou omissao", false));
+                        "SIN-REL-010", Severity.Info, 1, 46, 51, "50", "Sequência de Numeração Própria",
+                        $"Salto de numeração em notas de emissão própria (Mod {parts[0]} Série '{parts[1]}'): {missing} nota(s) ausente(s) entre {arr[i] + 1} e {arr[i + 1] - 1}.",
+                        $"{arr[i]} -> {arr[i + 1]}", "Conferir inutilização ou omissão", false));
                 }
             }
         }

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=OpenSintegra Contabil
-Comment=Validador, Corretor e Auditoria Cruzada Sintegra (Convenio ICMS 57/95)
+Name=OpenSintegra Contábil
+Comment=Validador, Corretor e Auditoria Cruzada Sintegra (Convênio ICMS 57/95)
 Exec=/usr/bin/opensintegra %f
 Icon=opensintegra
 Terminal=false

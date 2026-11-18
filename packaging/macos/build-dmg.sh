@@ -39,7 +39,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
   <key>CFBundleName</key>
   <string>OpenSintegra Contabil</string>
   <key>CFBundleDisplayName</key>
-  <string>OpenSintegra Contabil</string>
+  <string>OpenSintegra Contábil</string>
   <key>CFBundleIdentifier</key>
   <string>io.opensintegra.contabil</string>
   <key>CFBundleVersion</key>

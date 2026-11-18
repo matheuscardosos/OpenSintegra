@@ -33,9 +33,9 @@ Section: utils
 Priority: optional
 Architecture: amd64
 Maintainer: OpenSintegra Contributors <https://github.com/opensintegra/open-sintegra>
-Description: Suite contabil para validacao e auditoria Sintegra (Convenio ICMS 57/95)
- Suite desktop multiplataforma e CLI de codigo aberto (MIT) para validacao,
- correcao automatica, auditoria cruzada XML/SPED e geracao de relatorios PDF/XLSX.
+Description: Suíte contábil para validação e auditoria Sintegra (Convênio ICMS 57/95)
+ Suíte desktop multiplataforma e CLI de código aberto (MIT) para validação,
+ correção automática, auditoria cruzada XML/SPED e geração de relatórios PDF/XLSX.
 EOF
 
 mkdir -p "$OUT_DIR"

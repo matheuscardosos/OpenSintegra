@@ -506,13 +506,13 @@ public static class FiscalCrossAuditor
     private static string CategoryLabel(XmlOperationCategory cat) => cat switch
     {
         XmlOperationCategory.CompraComercial => "Compra Comercial",
-        XmlOperationCategory.Bonificacao => "Bonificacao / Brinde (5910)",
+        XmlOperationCategory.Bonificacao => "Bonificação / Brinde (5910)",
         XmlOperationCategory.Comodato => "Comodato (5908)",
-        XmlOperationCategory.DevolucaoRetorno => "Devolucao / Retorno Fornec. (tpNF=0)",
-        XmlOperationCategory.SaidaPropria => "Saida Propria",
+        XmlOperationCategory.DevolucaoRetorno => "Devolução / Retorno Fornec. (tpNF=0)",
+        XmlOperationCategory.SaidaPropria => "Saída Própria",
         XmlOperationCategory.NfceConsumidor => "NFC-e Consumidor (Mod 65)",
         XmlOperationCategory.CteTransporte => "CT-e Transporte",
-        XmlOperationCategory.NfseServico => "NFS-e Servico",
+        XmlOperationCategory.NfseServico => "NFS-e Serviço",
         _ => "Evento"
     };
 
@@ -632,7 +632,7 @@ public static class FiscalCrossAuditor
                 if (foundIn61) matchedDocs++;
                 documentRows.Add(new XmlAuditDocumentRow(
                     ym, dataBr, x.EmitCnpj, x.EmitNome, mod, x.Serie, x.Numero,
-                    cat, catLabel, foundIn61 ? "Faixa no Reg 61" : "Nao localizado no Reg 61",
+                    cat, catLabel, foundIn61 ? "Faixa no Reg 61" : "Não localizado no Reg 61",
                     !foundIn61 && !isCancelled, x.ValorTotalCents, 0,
                     string.Join(", ", x.Cfops), "", "NFC-e agrupada no Registro 61"));
                 continue;
@@ -669,7 +669,7 @@ public static class FiscalCrossAuditor
                     long sintIcms = r50List.Sum(r => r.Situacao == "S" ? 0L : r.ValorIcmsCents);
                     string sintCfops = string.Join(", ", r50List.Select(r => r.Cfop).Distinct());
 
-                    string matchStatus = "Lancada OK";
+                    string matchStatus = "Lançada OK";
                     bool critical = false;
                     string note = "";
 
@@ -678,23 +678,23 @@ public static class FiscalCrossAuditor
                         statusDiffs++;
                         matchStatus = "Cancelada no XML (Ativa no Sintegra)";
                         critical = true;
-                        note = "NF cancelada no XML/SEFAZ mas ativa no Sintegra";
+                        note = "NF cancelada no XML/SEFAZ, mas ativa no Sintegra";
                         findings.Add(new AuditFinding(
-                            "AUD-XML-004", Severity.Error, "XML", $"NF-e {x.Numero} Serie {x.Serie}",
-                            "NF-e consta como CANCELADA no XML/Evento SEFAZ (110111), mas esta ativa (Situacao N) no Sintegra.",
-                            $"Situacao {r50List[0].Situacao}", "Cancelada (101 / 110111)"));
+                            "AUD-XML-004", Severity.Error, "XML", $"NF-e {x.Numero} Série {x.Serie}",
+                            "NF-e consta como CANCELADA no XML/Evento SEFAZ (110111), mas está ativa (Situação N) no Sintegra.",
+                            $"Situação {r50List[0].Situacao}", "Cancelada (101 / 110111)"));
                     }
                     else if (!isCancelled && !sintCancelled)
                     {
                         if (Math.Abs(sintTot - x.ValorTotalCents) > 2)
                         {
                             valueDiffs++;
-                            matchStatus = "Divergencia de Valor";
+                            matchStatus = "Divergência de Valor";
                             critical = true;
-                            note = $"Diferenca de R$ {TaxIdValidator.FormatCentsBrl(sintTot - x.ValorTotalCents)}";
+                            note = $"Diferença de R$ {TaxIdValidator.FormatCentsBrl(sintTot - x.ValorTotalCents)}";
                             findings.Add(new AuditFinding(
-                                "AUD-XML-003", Severity.Error, "XML", $"NF-e {x.Numero} Serie {x.Serie}",
-                                "Divergencia no Valor Contabil Total entre o XML da NF-e e o Registro 50.",
+                                "AUD-XML-003", Severity.Error, "XML", $"NF-e {x.Numero} Série {x.Serie}",
+                                "Divergência no Valor Contábil Total entre o XML da NF-e e o Registro 50.",
                                 $"R$ {TaxIdValidator.FormatCentsBrl(sintTot)}",
                                 $"R$ {TaxIdValidator.FormatCentsBrl(x.ValorTotalCents)}"));
                         }
@@ -729,7 +729,7 @@ public static class FiscalCrossAuditor
 
                     if (isCancelled)
                     {
-                        matchStatus = "Cancelada no XML (Nao escriturada)";
+                        matchStatus = "Cancelada no XML (Não escriturada)";
                         note = "XML cancelado na SEFAZ";
                     }
                     else if (returnedInFull && returningXml is not null)
@@ -745,11 +745,11 @@ public static class FiscalCrossAuditor
                         missingInSintegra++;
                         isCriticalGap = true;
                         matchStatus = "OMISSA NO SINTEGRA";
-                        note = "NF de compra nao localizada no Registro 50 do Sintegra";
+                        note = "NF de compra não localizada no Registro 50 do Sintegra";
 
                         findings.Add(new AuditFinding(
                             "AUD-XML-001", Severity.Error, "XML", $"NF-e {x.Numero} ({x.EmitNome})",
-                            $"Compra comercial de {dataBr} nao foi lancada no Registro 50 do Sintegra (CFOP XML: {string.Join(", ", x.Cfops)}).",
+                            $"Compra comercial de {dataBr} não foi lançada no Registro 50 do Sintegra (CFOP XML: {string.Join(", ", x.Cfops)}).",
                             "Ausente", $"R$ {TaxIdValidator.FormatCentsBrl(x.ValorTotalCents)}"));
 
                         if (ym != "000000")
@@ -763,11 +763,11 @@ public static class FiscalCrossAuditor
                     {
                         xmlOutrasOmissas++;
                         matchStatus = cat == XmlOperationCategory.DevolucaoRetorno
-                            ? "Devolucao/Retorno (sem Reg 50)"
-                            : "Nao lancada (Nao-compra)";
+                            ? "Devolução/Retorno (sem Reg 50)"
+                            : "Não lançada (Não-compra)";
                         note = returningXml is not null
                             ? $"Retornada pela NF {returningXml.Numero}"
-                            : $"{catLabel} sem lancamento no Registro 50";
+                            : $"{catLabel} sem lançamento no Registro 50";
 
                         findings.Add(new AuditFinding(
                             "AUD-XML-005", Severity.Warning, "XML", $"NF-e {x.Numero} ({catLabel})",
@@ -799,22 +799,22 @@ public static class FiscalCrossAuditor
                     {
                         valueDiffs++;
                         findings.Add(new AuditFinding(
-                            "AUD-XML-003", Severity.Error, "XML", $"CT-e {x.Numero} Serie {x.Serie}",
-                            "Divergencia no Valor Total do CT-e entre o XML e o Registro 70.",
+                            "AUD-XML-003", Severity.Error, "XML", $"CT-e {x.Numero} Série {x.Serie}",
+                            "Divergência no Valor Total do CT-e entre o XML e o Registro 70.",
                             $"R$ {TaxIdValidator.FormatCentsBrl(sintTot)}",
                             $"R$ {TaxIdValidator.FormatCentsBrl(x.ValorTotalCents)}"));
                     }
                     documentRows.Add(new XmlAuditDocumentRow(
                         ym, dataBr, x.EmitCnpj, x.EmitNome, mod, x.Serie, x.Numero,
-                        cat, catLabel, diff ? "Divergencia de Valor" : "Lancada OK", diff,
+                        cat, catLabel, diff ? "Divergência de Valor" : "Lançada OK", diff,
                         x.ValorTotalCents, sintTot, string.Join(", ", x.Cfops), r70List[0].Cfop, ""));
                 }
                 else
                 {
                     missingInSintegra++;
                     findings.Add(new AuditFinding(
-                        "AUD-XML-001", Severity.Error, "XML", $"CT-e {x.Numero} Serie {x.Serie}",
-                        "CT-e presente no pacote XML nao foi localizado no Registro 70 do Sintegra.",
+                        "AUD-XML-001", Severity.Error, "XML", $"CT-e {x.Numero} Série {x.Serie}",
+                        "CT-e presente no pacote XML não foi localizado no Registro 70 do Sintegra.",
                         "Ausente", $"R$ {TaxIdValidator.FormatCentsBrl(x.ValorTotalCents)}"));
                     documentRows.Add(new XmlAuditDocumentRow(
                         ym, dataBr, x.EmitCnpj, x.EmitNome, mod, x.Serie, x.Numero,
@@ -835,7 +835,7 @@ public static class FiscalCrossAuditor
                     long tot = r50List.Sum(r => r.ValorTotalCents);
                     var parts = fullKey.Split('|');
                     findings.Add(new AuditFinding(
-                        "AUD-XML-002", Severity.Warning, "XML", $"NF {parts[3]} Serie {parts[2]} (Mod {parts[1]})",
+                        "AUD-XML-002", Severity.Warning, "XML", $"NF {parts[3]} Série {parts[2]} (Mod {parts[1]})",
                         "Nota Fiscal escriturada no Sintegra (Registro 50) sem XML correspondente no lote auditado.",
                         $"R$ {TaxIdValidator.FormatCentsBrl(tot)}", "XML ausente no lote"));
                 }
@@ -862,9 +862,9 @@ public static class FiscalCrossAuditor
                     {
                         statusDiffs++;
                         findings.Add(new AuditFinding(
-                            "AUD-SPD-004", Severity.Error, "SPED", $"NF {sinv.NumDoc} Serie {sinv.Ser}",
-                            "Divergencia de situacao da Nota Fiscal entre SPED (C100 COD_SIT) e Sintegra (Reg 50).",
-                            $"Situacao {r50List[0].Situacao}", $"COD_SIT {sinv.CodSit}"));
+                            "AUD-SPD-004", Severity.Error, "SPED", $"NF {sinv.NumDoc} Série {sinv.Ser}",
+                            "Divergência de situação da Nota Fiscal entre SPED (C100 COD_SIT) e Sintegra (Reg 50).",
+                            $"Situação {r50List[0].Situacao}", $"COD_SIT {sinv.CodSit}"));
                     }
                     else if (!spedCancelled)
                     {
@@ -873,8 +873,8 @@ public static class FiscalCrossAuditor
                         {
                             valueDiffs++;
                             findings.Add(new AuditFinding(
-                                "AUD-SPD-003", Severity.Error, "SPED", $"NF {sinv.NumDoc} Serie {sinv.Ser}",
-                                "Divergencia no Valor Contabil entre SPED C100 e Sintegra Registro 50.",
+                                "AUD-SPD-003", Severity.Error, "SPED", $"NF {sinv.NumDoc} Série {sinv.Ser}",
+                                "Divergência no Valor Contábil entre SPED C100 e Sintegra Registro 50.",
                                 $"R$ {TaxIdValidator.FormatCentsBrl(sintTot)}",
                                 $"R$ {TaxIdValidator.FormatCentsBrl(sinv.VlDocCents)}"));
                         }
@@ -884,7 +884,7 @@ public static class FiscalCrossAuditor
                 {
                     missingInSintegra++;
                     findings.Add(new AuditFinding(
-                        "AUD-SPD-001", Severity.Error, "SPED", $"NF {sinv.NumDoc} Serie {sinv.Ser} (C100)",
+                        "AUD-SPD-001", Severity.Error, "SPED", $"NF {sinv.NumDoc} Série {sinv.Ser} (C100)",
                         "Nota Fiscal escriturada no SPED (C100) ausente no Registro 50 do Sintegra.",
                         "Ausente", $"R$ {TaxIdValidator.FormatCentsBrl(sinv.VlDocCents)}"));
                 }

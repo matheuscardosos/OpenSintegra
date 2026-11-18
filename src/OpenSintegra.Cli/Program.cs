@@ -69,16 +69,16 @@ internal static class Program
 
     private static void PrintUsage()
     {
-        Console.WriteLine($"OpenSintegra Contabil CLI v{AppVersion} (Licenca MIT)");
-        Console.WriteLine("Uso: opensintegra-cli <comando> [opcoes]");
+        Console.WriteLine($"OpenSintegra Contábil CLI v{AppVersion} (Licença MIT)");
+        Console.WriteLine("Uso: opensintegra-cli <comando> [opções]");
         Console.WriteLine();
         Console.WriteLine("Comandos:");
         Console.WriteLine("  validate <sintegra.txt> [--month YYYYMM] [--json] [--save-db] [--db path]");
-        Console.WriteLine("  fix <entrada.txt> [-o saida.txt]");
-        Console.WriteLine("  split <anual.txt> [-d pasta_saida]");
-        Console.WriteLine("  inspect <sintegra.txt> --line <numero>");
+        Console.WriteLine("  fix <entrada.txt> [-o saída.txt]");
+        Console.WriteLine("  split <anual.txt> [-d pasta_saída]");
+        Console.WriteLine("  inspect <sintegra.txt> --line <número>");
         Console.WriteLine("  audit <sintegra.txt> [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--json]");
-        Console.WriteLine("  export-pdf <sintegra.txt> [-o relatorio.pdf] [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--regime nome]");
+        Console.WriteLine("  export-pdf <sintegra.txt> [-o relatório.pdf] [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--regime nome]");
         Console.WriteLine("  export-xlsx <sintegra.txt> [-o planilha.xlsx] [--xml zip_ou_pasta] [--sped sped.txt] [--month YYYYMM] [--regime nome]");
         Console.WriteLine("  db-stats [--db path] [--limit-mb N]");
         Console.WriteLine("  db-history [--cnpj 14digitos] [--db path]");
@@ -126,14 +126,14 @@ internal static class Program
         if (doc.Reg10 is { } r10)
             Console.WriteLine($"Empresa: {r10.NomeContribuinte.Trim()} | CNPJ: {TaxIdValidator.FormatCnpj(r10.Cnpj)} | IE: {r10.Ie.Trim()}");
         Console.WriteLine($"Escopo: {scoped.PeriodLabel}");
-        Console.WriteLine($"Resultado: {(report.Summary.Valid ? "VALIDO" : "INVALIDO")} (Erros: {report.Summary.ErrorCount}, Avisos: {report.Summary.WarningCount})");
+        Console.WriteLine($"Resultado: {(report.Summary.Valid ? "VÁLIDO" : "INVÁLIDO")} (Erros: {report.Summary.ErrorCount}, Avisos: {report.Summary.WarningCount})");
         Console.WriteLine($"Entradas: R$ {TaxIdValidator.FormatCentsBrl(scoped.TotalEntradasCents)} (Compras R$ {TaxIdValidator.FormatCentsBrl(scoped.ComprasEntradasCents)})");
-        Console.WriteLine($"Saidas:   R$ {TaxIdValidator.FormatCentsBrl(scoped.TotalSaidasCents)}");
-        Console.WriteLine($"Equilibrio S/E: {(scoped.RatioSaidaSobreEntradaPct is double r ? $"{r:N1}%" : "-")}");
+        Console.WriteLine($"Saídas:   R$ {TaxIdValidator.FormatCentsBrl(scoped.TotalSaidasCents)}");
+        Console.WriteLine($"Equilíbrio S/E: {(scoped.RatioSaidaSobreEntradaPct is double r ? $"{r:N1}%" : "-")}");
 
         if (scoped.Diagnostics.Count > 0)
         {
-            Console.WriteLine("\nDiagnosticos (primeiros 25):");
+            Console.WriteLine("\nDiagnósticos (primeiros 25):");
             foreach (var d in scoped.Diagnostics.Take(25))
                 Console.WriteLine($"  [{d.SeverityLabel}] {d.Code} L{d.Line} ({d.RecordType}): {d.Message}");
         }
@@ -155,7 +155,7 @@ internal static class Program
         var fx = SintegraAutoFixer.AutoFix(raw, new FixOptions());
         File.WriteAllBytes(outPath, fx.FixedBytes);
 
-        Console.WriteLine($"Correcao aplicada e salva em: {outPath}");
+        Console.WriteLine($"Correção aplicada e salva em: {outPath}");
         Console.WriteLine($"Erros:  {fx.BeforeSummary.ErrorCount} -> {fx.AfterSummary.ErrorCount}");
         Console.WriteLine($"Avisos: {fx.BeforeSummary.WarningCount} -> {fx.AfterSummary.WarningCount}");
         foreach (var af in fx.AppliedFixes)
@@ -243,8 +243,8 @@ internal static class Program
             return 0;
         }
 
-        Console.WriteLine($"Auditoria Cruzada ({scoped.PeriodLabel}) - Precisao Global: {audit.PrecisionScorePct:N1}%");
-        Console.WriteLine($"Compras XML: {scoped.XmlComprasLancadas} lancadas / {scoped.XmlComprasTotal} totais ({scoped.XmlComprasOmissas} omissas = R$ {TaxIdValidator.FormatCentsBrl(scoped.XmlComprasOmissasCents)})");
+        Console.WriteLine($"Auditoria Cruzada ({scoped.PeriodLabel}) - Precisão Global: {audit.PrecisionScorePct:N1}%");
+        Console.WriteLine($"Compras XML: {scoped.XmlComprasLancadas} lançadas / {scoped.XmlComprasTotal} totais ({scoped.XmlComprasOmissas} omissas = R$ {TaxIdValidator.FormatCentsBrl(scoped.XmlComprasOmissasCents)})");
         foreach (var gap in scoped.XmlDocumentRows.Where(r => r.IsCriticalGap))
             Console.WriteLine($"  [OMISSA] {gap.DataBr} NF {gap.Numero}/{gap.Serie} | {gap.EmitNome} | R$ {TaxIdValidator.FormatCentsBrl(gap.XmlValorCents)}");
 
@@ -284,7 +284,7 @@ internal static class Program
         else
             ExcelReportGenerator.GenerateWorkbook(ctx, outPath);
 
-        Console.WriteLine($"Relatorio {(isPdf ? "PDF" : "Excel (.xlsx)")} gerado com sucesso: {outPath}");
+        Console.WriteLine($"Relatório {(isPdf ? "PDF" : "Excel (.xlsx)")} gerado com sucesso: {outPath}");
         return 0;
     }
 
@@ -317,9 +317,9 @@ internal static class Program
         if (!string.IsNullOrWhiteSpace(cnpj))
         {
             var timeline = db.GetCompanyMonthlyTimeline(cnpj);
-            Console.WriteLine($"\nHistorico mensal ({timeline.Count} competencia(s)):");
+            Console.WriteLine($"\nHistórico mensal ({timeline.Count} competência(s)):");
             foreach (var m in timeline)
-                Console.WriteLine($"  {m.MonthLabel}: Entradas R$ {TaxIdValidator.FormatCentsBrl(m.TotalEntradasCents)} | Saidas R$ {TaxIdValidator.FormatCentsBrl(m.TotalSaidasCents)} | Arquivo: {m.SourceFileName}");
+                Console.WriteLine($"  {m.MonthLabel}: Entradas R$ {TaxIdValidator.FormatCentsBrl(m.TotalEntradasCents)} | Saídas R$ {TaxIdValidator.FormatCentsBrl(m.TotalSaidasCents)} | Arquivo: {m.SourceFileName}");
         }
         return 0;
     }

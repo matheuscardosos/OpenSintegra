@@ -109,11 +109,11 @@ public sealed class DatabaseAndReportsTests : IDisposable
         Assert.True(File.Exists(xlsxPath));
         using var wb = new XLWorkbook(xlsxPath);
         Assert.Contains(wb.Worksheets, ws => ws.Name == "Resumo Executivo");
-        Assert.Contains(wb.Worksheets, ws => ws.Name == "Movimentacao Mensal");
-        Assert.Contains(wb.Worksheets, ws => ws.Name == "Apuracao por CFOP");
+        Assert.Contains(wb.Worksheets, ws => ws.Name == "Movimentação Mensal");
+        Assert.Contains(wb.Worksheets, ws => ws.Name == "Apuração por CFOP");
         Assert.Contains(wb.Worksheets, ws => ws.Name == "Notas Reg 50");
-        Assert.Contains(wb.Worksheets, ws => ws.Name == "Saidas NFC-e Reg 61");
+        Assert.Contains(wb.Worksheets, ws => ws.Name == "Saídas NFC-e Reg 61");
         Assert.Contains(wb.Worksheets, ws => ws.Name == "Confronto XML");
-        Assert.Contains(wb.Worksheets, ws => ws.Name == "Diagnostico");
+        Assert.Contains(wb.Worksheets, ws => ws.Name == "Diagnóstico");
     }
 }
