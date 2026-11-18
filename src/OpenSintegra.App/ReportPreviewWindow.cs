@@ -76,7 +76,7 @@ public sealed class ReportPreviewWindow : Window
         var btnPrint = CreateToolbarButton("Imprimir", VectorIcons.DocumentText, "#334155");
         btnPrint.Click += (_, _) => PrintViaTempPdf();
 
-        var btnPdf = CreateToolbarButton("Salvar PDF", VectorIcons.ExportDoc, "#DC2626");
+        var btnPdf = CreateToolbarButton("Salvar PDF", VectorIcons.ExportDoc, "#B91C1C");
         btnPdf.Click += async (_, _) => await ExportPdfAsync();
 
         var btnXlsx = CreateToolbarButton("Salvar Excel (.xlsx)", VectorIcons.ChartBar, "#15803D");
@@ -285,7 +285,7 @@ public sealed class ReportPreviewWindow : Window
         sGrid.Children.Add(CreateSummaryCell("Compras Não Lançadas (XML)",
             missText,
             _activeCtx.Audit is null ? "#FFFFFF" : (hasMissing ? "#FEF2F2" : "#ECFDF5"),
-            _activeCtx.Audit is null ? "#64748B" : (hasMissing ? "#B91C1C" : "#15803D"), 3, false));
+            _activeCtx.Audit is null ? "#475569" : (hasMissing ? "#B91C1C" : "#15803D"), 3, false));
         summaryBox.Child = sGrid;
         stack.Children.Add(summaryBox);
 
@@ -325,7 +325,7 @@ public sealed class ReportPreviewWindow : Window
                 r.Children.Add(salCell);
 
                 string xmlLbl = "Sem XML";
-                string xmlColor = "#64748B";
+                string xmlColor = "#475569";
                 if (_activeCtx.Audit is not null)
                 {
                     if (v.XmlCoverageByMonth.TryGetValue(m.YearMonth, out var cov) && cov.XmlComprasOmissas > 0)
@@ -486,13 +486,13 @@ public sealed class ReportPreviewWindow : Window
         {
             Text = $"OpenSintegra Contábil v{_activeCtx.AppVersion}",
             FontSize = 11.5,
-            Foreground = Brush.Parse("#64748B")
+            Foreground = Brush.Parse("#475569")
         });
         var dtText = new TextBlock
         {
             Text = $"Relatório gerado em {DateTime.Now:dd/MM/yyyy} às {DateTime.Now:HH:mm}",
             FontSize = 11.5,
-            Foreground = Brush.Parse("#64748B")
+            Foreground = Brush.Parse("#475569")
         };
         Grid.SetColumn(dtText, 1);
         footGrid.Children.Add(dtText);
@@ -537,7 +537,7 @@ public sealed class ReportPreviewWindow : Window
             }
         };
         if (!string.IsNullOrWhiteSpace(subtitle))
-            sp.Children.Add(new TextBlock { Text = subtitle, FontSize = 10, Foreground = Brush.Parse("#64748B") });
+            sp.Children.Add(new TextBlock { Text = subtitle, FontSize = 11, Foreground = Brush.Parse("#475569") });
 
         var b = new Border
         {

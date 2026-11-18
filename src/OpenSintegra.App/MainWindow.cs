@@ -78,15 +78,15 @@ public sealed class MainWindow : Window
     private readonly TextBlock _statusDbText = new();
     private readonly ProgressBar _statusDbBar = new();
 
-    // Cached static brushes for virtualized tables
+    // Cached WCAG AA verified static brushes & design tokens
     private static readonly IBrush BrushTextDark = Brush.Parse("#0F172A");
     private static readonly IBrush BrushTextBody = Brush.Parse("#334155");
-    private static readonly IBrush BrushMuted = Brush.Parse("#64748B");
+    private static readonly IBrush BrushMuted = Brush.Parse("#475569");
     private static readonly IBrush BrushBlueDark = Brush.Parse("#1D4ED8");
-    private static readonly IBrush BrushBlueInfo = Brush.Parse("#0284C7");
+    private static readonly IBrush BrushBlueInfo = Brush.Parse("#0369A1");
     private static readonly IBrush BrushGreen = Brush.Parse("#15803D");
-    private static readonly IBrush BrushAmber = Brush.Parse("#D97706");
-    private static readonly IBrush BrushRed = Brush.Parse("#DC2626");
+    private static readonly IBrush BrushAmber = Brush.Parse("#B45309");
+    private static readonly IBrush BrushRed = Brush.Parse("#B91C1C");
     private static readonly IBrush BrushBorderLight = Brush.Parse("#E2E8F0");
     private static readonly IBrush BrushHeaderBg = Brush.Parse("#F1F5F9");
     private static readonly IBrush BrushErrorBg = Brush.Parse("#FEF2F2");
@@ -280,14 +280,14 @@ public sealed class MainWindow : Window
 
         strip.Children.Add(CreateRibbonButton("Abrir", "Sintegra", VectorIcons.FolderOpen, "#2563EB", async () => await PickAndOpenSintegraAsync()));
 
-        var btnXmlRibbon = CreateRibbonButton("Carregar", "XML / Pasta", VectorIcons.UploadZip, "#0284C7", null);
+        var btnXmlRibbon = CreateRibbonButton("Carregar", "XML / Pasta", VectorIcons.UploadZip, "#0369A1", null);
         var xmlFlyout = BuildXmlActionsFlyout();
         btnXmlRibbon.Click += (_, _) => xmlFlyout.ShowAt(btnXmlRibbon);
         strip.Children.Add(btnXmlRibbon);
 
         strip.Children.Add(CreateToolbarDivider());
-        strip.Children.Add(CreateRibbonButton("Lançar", "Faltantes", VectorIcons.CheckBadge, "#16A34A", async () => await OpenInjectMissingDialogAsync(null)));
-        strip.Children.Add(CreateRibbonButton("Corrigir", "Sintegra", VectorIcons.Wrench, "#D97706", async () => await RunQuickFixAndRefreshAsync()));
+        strip.Children.Add(CreateRibbonButton("Lançar", "Faltantes", VectorIcons.CheckBadge, "#15803D", async () => await OpenInjectMissingDialogAsync(null)));
+        strip.Children.Add(CreateRibbonButton("Corrigir", "Sintegra", VectorIcons.Wrench, "#B45309", async () => await RunQuickFixAndRefreshAsync()));
         strip.Children.Add(CreateToolbarDivider());
 
         var btnRel = CreateRibbonButton("Relatórios", "PDF / Excel", VectorIcons.DocumentText, "#2563EB", null);
@@ -332,14 +332,9 @@ public sealed class MainWindow : Window
 
         var btn = new Button
         {
-            Content = stack,
-            Background = Brushes.Transparent,
-            BorderBrush = Brushes.Transparent,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(12, 5),
-            CornerRadius = new CornerRadius(5),
-            MinWidth = 78
+            Content = stack
         };
+        btn.Classes.Add("ribbon");
         if (onClick is not null)
             btn.Click += (_, _) => onClick();
         return btn;
@@ -390,7 +385,7 @@ public sealed class MainWindow : Window
                 Children =
                 {
                     new TextBlock { Text = "Convênio ICMS 57/95", FontSize = 11.5, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark },
-                    new TextBlock { Text = $"OpenSintegra v{AppVersion} MIT", FontSize = 10.5, Foreground = BrushMuted }
+                    new TextBlock { Text = $"OpenSintegra v{AppVersion} MIT", FontSize = 11, Foreground = BrushMuted }
                 }
             }
         };
@@ -433,14 +428,11 @@ public sealed class MainWindow : Window
 
         var btn = new Button
         {
-            Content = grid,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Background = isPrimary ? Brush.Parse("#DBEAFE") : Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Padding = new Thickness(10, 8),
-            CornerRadius = new CornerRadius(5)
+            Content = grid
         };
+        btn.Classes.Add("nav");
+        if (isPrimary)
+            btn.Classes.Add("active");
         btn.Click += (_, _) => NavigateTo(section);
         _navButtons[section] = btn;
         return btn;
@@ -523,10 +515,7 @@ public sealed class MainWindow : Window
         Grid.SetColumn(_hdrStatusPill, 2);
         grid.Children.Add(_hdrStatusPill);
 
-        _btnSalvarAlteracoes.Background = Brush.Parse("#16A34A");
-        _btnSalvarAlteracoes.BorderThickness = new Thickness(0);
-        _btnSalvarAlteracoes.Padding = new Thickness(14, 7);
-        _btnSalvarAlteracoes.CornerRadius = new CornerRadius(6);
+        _btnSalvarAlteracoes.Classes.Add("success");
         _btnSalvarAlteracoes.VerticalAlignment = VerticalAlignment.Center;
         _btnSalvarAlteracoes.IsVisible = false;
         _btnSalvarAlteracoes.Content = new TextBlock
@@ -746,7 +735,7 @@ public sealed class MainWindow : Window
         var stats = _db.GetStorageStats();
         _statusDbText.Text = stats.FormattedSummary;
         _statusDbBar.Value = Math.Clamp(stats.UsageFraction * 100.0, 0, 100);
-        _statusDbBar.Foreground = Brush.Parse(stats.UsageFraction > 0.85 ? "#DC2626" : "#2563EB");
+        _statusDbBar.Foreground = stats.UsageFraction > 0.85 ? BrushRed : Brush.Parse("#2563EB");
     }
 
     private void NavigateTo(NavSection section)
@@ -755,7 +744,7 @@ public sealed class MainWindow : Window
         foreach (var (sec, btn) in _navButtons)
         {
             bool active = sec == section;
-            btn.Background = active ? Brush.Parse("#DBEAFE") : Brushes.Transparent;
+            btn.Classes.Set("active", active);
             if (btn.Content is Grid g && g.Children.Count >= 2)
             {
                 if (g.Children[0] is PathIcon pi)
@@ -846,7 +835,7 @@ public sealed class MainWindow : Window
             : $"Cupons NFC-e (Reg. 61): R$ {TaxIdValidator.FormatCentsBrl(_scoped.SaidasReg61Cents)}";
 
         var cardSaidas = BuildKpiCard(
-            VectorIcons.ArrowUp, "#16A34A", "#DCFCE7",
+            VectorIcons.ArrowUp, "#15803D", "#DCFCE7",
             "Saídas / Vendas no Sintegra",
             $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}",
             saidasDetail,
@@ -864,7 +853,7 @@ public sealed class MainWindow : Window
                 : "Todas as compras XML lançadas";
 
         var cardRatio = BuildKpiCard(
-            VectorIcons.Scale, salesHigher ? "#16A34A" : "#DC2626", salesHigher ? "#DCFCE7" : "#FEE2E2",
+            VectorIcons.Scale, salesHigher ? "#15803D" : "#B91C1C", salesHigher ? "#DCFCE7" : "#FEE2E2",
             "Saldo (Saídas - Entradas)",
             TaxIdValidator.FormatSignedCentsBrl(_scoped.SaldoLiquidoCents),
             kpi3Sub,
@@ -901,7 +890,7 @@ public sealed class MainWindow : Window
         donutLayout.Children.Add(donutChart);
 
         var legendStack = new StackPanel { Spacing = 14, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        legendStack.Children.Add(CreateDonutLegendItem("#16A34A", "Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}", ""));
+        legendStack.Children.Add(CreateDonutLegendItem("#15803D", "Saídas (Vendas)", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalSaidasCents)}", ""));
         legendStack.Children.Add(CreateDonutLegendItem("#2563EB", "Entradas", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.TotalEntradasCents)}", ""));
         Grid.SetColumn(legendStack, 1);
         donutLayout.Children.Add(legendStack);
@@ -1119,8 +1108,8 @@ public sealed class MainWindow : Window
         var sumGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*,10,*,10,*") };
         var s1 = BuildSmallStatBox("Notas de Compra nos XMLs", _scoped.XmlComprasTotal.ToString(), "#0F172A");
         var s2 = BuildSmallStatBox("Já Lançadas no Sintegra", _scoped.XmlComprasLancadas.ToString(), "#15803D");
-        var s3 = BuildSmallStatBox("Não Lançadas (Faltantes)", _scoped.XmlComprasOmissas.ToString(), _scoped.XmlComprasOmissas > 0 ? "#DC2626" : "#15803D");
-        var s4 = BuildSmallStatBox("Valor Total Faltante", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)}", _scoped.XmlComprasOmissasCents > 0 ? "#DC2626" : "#15803D");
+        var s3 = BuildSmallStatBox("Não Lançadas (Faltantes)", _scoped.XmlComprasOmissas.ToString(), _scoped.XmlComprasOmissas > 0 ? "#B91C1C" : "#15803D");
+        var s4 = BuildSmallStatBox("Valor Total Faltante", $"R$ {TaxIdValidator.FormatCentsBrl(_scoped.XmlComprasOmissasCents)}", _scoped.XmlComprasOmissasCents > 0 ? "#B91C1C" : "#15803D");
         Grid.SetColumn(s1, 0);
         Grid.SetColumn(s2, 2);
         Grid.SetColumn(s3, 4);
@@ -1222,16 +1211,9 @@ public sealed class MainWindow : Window
 
                 var btnDetails = new Button
                 {
-                    Content = "Detalhes",
-                    FontSize = 10.5,
-                    FontWeight = FontWeight.SemiBold,
-                    Background = Brush.Parse("#F1F5F9"),
-                    BorderBrush = Brush.Parse("#CBD5E1"),
-                    BorderThickness = new Thickness(1),
-                    Foreground = Brush.Parse("#334155"),
-                    Padding = new Thickness(8, 3),
-                    CornerRadius = new CornerRadius(4)
+                    Content = "Detalhes"
                 };
+                btnDetails.Classes.Add("row-action");
                 btnDetails.Click += async (_, _) => await OpenXmlInvoiceDetailsAsync(d);
                 actRow.Children.Add(btnDetails);
 
@@ -1239,15 +1221,12 @@ public sealed class MainWindow : Window
                 {
                     var btnOne = new Button
                     {
-                        Content = "Lançar",
-                        FontSize = 10.5,
-                        FontWeight = FontWeight.SemiBold,
-                        Background = Brush.Parse("#2563EB"),
-                        BorderThickness = new Thickness(0),
-                        Foreground = Brushes.White,
-                        Padding = new Thickness(9, 3),
-                        CornerRadius = new CornerRadius(4)
+                        Content = "Lançar"
                     };
+                    btnOne.Classes.Add("primary");
+                    btnOne.Padding = new Thickness(9, 3);
+                    btnOne.FontSize = 11;
+                    btnOne.FontWeight = FontWeight.SemiBold;
                     btnOne.Click += async (_, _) => await OpenInjectMissingDialogAsync(d);
                     actRow.Children.Add(btnOne);
                 }
@@ -1368,18 +1347,12 @@ public sealed class MainWindow : Window
                         var btnItens = new Button
                         {
                             Content = prodCnt > 0 ? $"Itens mês ({prodCnt})" : "Ver mês",
-                            FontSize = 10.5,
-                            FontWeight = FontWeight.SemiBold,
-                            Background = Brush.Parse(prodCnt > 0 ? "#EFF6FF" : "#F1F5F9"),
-                            BorderBrush = Brush.Parse(prodCnt > 0 ? "#93C5FD" : "#CBD5E1"),
-                            BorderThickness = new Thickness(1),
-                            Foreground = Brush.Parse(prodCnt > 0 ? "#1D4ED8" : "#475569"),
-                            Padding = new Thickness(8, 3),
                             Margin = new Thickness(4, 2),
-                            CornerRadius = new CornerRadius(4),
                             HorizontalAlignment = HorizontalAlignment.Center,
                             VerticalAlignment = VerticalAlignment.Center
                         };
+                        btnItens.Classes.Add("row-action");
+                        if (prodCnt > 0) btnItens.Classes.Add("accent");
                         btnItens.Click += (_, _) => OpenCouponMonthDetails(r61);
                         Grid.SetColumn(btnItens, 7);
                         g.Children.Add(btnItens);
@@ -1476,18 +1449,12 @@ public sealed class MainWindow : Window
                     var btnItens = new Button
                     {
                         Content = itemCnt > 0 ? $"Itens ({itemCnt})" : "Resumo",
-                        FontSize = 10.5,
-                        FontWeight = FontWeight.SemiBold,
-                        Background = Brush.Parse(itemCnt > 0 ? "#EFF6FF" : "#F1F5F9"),
-                        BorderBrush = Brush.Parse(itemCnt > 0 ? "#93C5FD" : "#CBD5E1"),
-                        BorderThickness = new Thickness(1),
-                        Foreground = Brush.Parse(itemCnt > 0 ? "#1D4ED8" : "#475569"),
-                        Padding = new Thickness(8, 3),
                         Margin = new Thickness(4, 2),
-                        CornerRadius = new CornerRadius(4),
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center
                     };
+                    btnItens.Classes.Add("row-action");
+                    if (itemCnt > 0) btnItens.Classes.Add("accent");
                     btnItens.Click += (_, _) => OpenInvoiceDetails(r50);
                     Grid.SetColumn(btnItens, 9);
                     g.Children.Add(btnItens);
@@ -2576,7 +2543,7 @@ public sealed class MainWindow : Window
     {
         var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, VerticalAlignment = VerticalAlignment.Center };
         sp.Children.Add(CreateLegendDot("#2563EB", "Entradas"));
-        sp.Children.Add(CreateLegendDot("#16A34A", "Saídas"));
+        sp.Children.Add(CreateLegendDot("#15803D", "Saídas"));
         return sp;
     }
 
@@ -2846,26 +2813,19 @@ public sealed class MainWindow : Window
 
     private static Control CreateAlertItem(bool isError, string title, string subtitle, Action onClick)
     {
-        var btn = new Button
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Background = Brush.Parse(isError ? "#FEF2F2" : "#F8FAFC"),
-            BorderBrush = Brush.Parse(isError ? "#FECACA" : "#CBD5E1"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(5),
-            Padding = new Thickness(10, 8)
-        };
+        var btn = new Button();
+        btn.Classes.Add("alert");
+        if (isError) btn.Classes.Add("danger");
 
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
-        var ico = VectorIcons.Create(isError ? VectorIcons.Warning : VectorIcons.CheckBadge, isError ? "#DC2626" : "#16A34A", 17);
+        var ico = VectorIcons.Create(isError ? VectorIcons.Warning : VectorIcons.CheckBadge, isError ? "#B91C1C" : "#15803D", 17);
         ico.Margin = new Thickness(0, 2, 9, 0);
         Grid.SetColumn(ico, 0);
         grid.Children.Add(ico);
 
         var sp = new StackPanel { Spacing = 1 };
         sp.Children.Add(new TextBlock { Text = title, FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = BrushTextDark });
-        sp.Children.Add(new TextBlock { Text = subtitle, FontSize = 11, Foreground = Brush.Parse("#475569"), TextWrapping = TextWrapping.Wrap });
+        sp.Children.Add(new TextBlock { Text = subtitle, FontSize = 11.5, Foreground = Brush.Parse("#475569"), TextWrapping = TextWrapping.Wrap });
         Grid.SetColumn(sp, 1);
         grid.Children.Add(sp);
 
@@ -2877,7 +2837,7 @@ public sealed class MainWindow : Window
     private static Button CreateQuickActionButton(string label, string iconPath, Action? onClick)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(VectorIcons.Create(iconPath, "#2563EB", 15));
+        row.Children.Add(VectorIcons.Create(iconPath, "#1D4ED8", 15));
         row.Children.Add(new TextBlock
         {
             Text = label,
@@ -2889,15 +2849,9 @@ public sealed class MainWindow : Window
 
         var btn = new Button
         {
-            Content = row,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
-            Background = Brush.Parse("#F8FAFC"),
-            BorderBrush = Brush.Parse("#CBD5E1"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(5),
-            Padding = new Thickness(10, 7)
+            Content = row
         };
+        btn.Classes.Add("quick");
         if (onClick is not null)
             btn.Click += (_, _) => onClick();
         return btn;
@@ -2918,12 +2872,9 @@ public sealed class MainWindow : Window
 
         var btn = new Button
         {
-            Content = row,
-            Background = Brush.Parse("#2563EB"),
-            BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(5),
-            Padding = new Thickness(12, 7)
+            Content = row
         };
+        btn.Classes.Add("primary");
         btn.Click += (_, _) => onClick();
         return btn;
     }
@@ -2932,17 +2883,10 @@ public sealed class MainWindow : Window
     {
         var btn = new Button
         {
-            Content = text,
-            FontSize = 11.5,
-            FontWeight = active ? FontWeight.SemiBold : FontWeight.Normal,
-            Background = Brush.Parse(active ? "#DBEAFE" : "#FFFFFF"),
-            BorderBrush = Brush.Parse(active ? "#3B82F6" : "#CBD5E1"),
-            BorderThickness = new Thickness(1),
-            Foreground = Brush.Parse(active ? "#1D4ED8" : "#334155"),
-            Padding = new Thickness(10, 5),
-            Margin = new Thickness(0, 0, 6, 4),
-            CornerRadius = new CornerRadius(5)
+            Content = text
         };
+        btn.Classes.Add("chip");
+        if (active) btn.Classes.Add("active");
         btn.Click += (_, _) => onClick();
         return btn;
     }

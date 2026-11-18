@@ -271,8 +271,8 @@ public sealed class InjectMissingXmlWindow : Window
                 emiStack.Children.Add(new TextBlock
                 {
                     Text = $"Saída: {TaxIdValidator.FormatDateBr(xml.DataSaiEnt)}",
-                    FontSize = 10,
-                    Foreground = Brush.Parse("#0284C7")
+                    FontSize = 11,
+                    Foreground = Brush.Parse("#0369A1")
                 });
             }
 
@@ -283,7 +283,7 @@ public sealed class InjectMissingXmlWindow : Window
                     : "Omissa",
                 FontSize = 11,
                 FontWeight = FontWeight.SemiBold,
-                Foreground = Brush.Parse(item.AlreadyInSintegra ? "#15803D" : "#DC2626"),
+                Foreground = Brush.Parse(item.AlreadyInSintegra ? "#15803D" : "#B91C1C"),
                 VerticalAlignment = VerticalAlignment.Center,
                 Padding = new Thickness(6, 4)
             };
@@ -363,7 +363,7 @@ public sealed class InjectMissingXmlWindow : Window
         var lblValidation = new TextBlock
         {
             FontSize = 11.5,
-            Foreground = Brush.Parse("#DC2626"),
+            Foreground = Brush.Parse("#B91C1C"),
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -443,13 +443,10 @@ public sealed class InjectMissingXmlWindow : Window
         var btnConfirm = new Button
         {
             Content = isReprocessMode ? "Aplicar Reprocessamento no Sintegra" : "Confirmar Lançamento no Sintegra",
-            Background = Brush.Parse("#16A34A"),
-            BorderThickness = new Thickness(0),
-            Foreground = Brushes.White,
             FontWeight = FontWeight.SemiBold,
-            Padding = new Thickness(18, 7),
-            CornerRadius = new CornerRadius(5)
+            Padding = new Thickness(18, 7)
         };
+        btnConfirm.Classes.Add("success");
         btnConfirm.Click += (_, _) =>
         {
             var confirmed = new List<XmlInjectionRequest>();

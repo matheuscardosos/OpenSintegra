@@ -17,11 +17,11 @@ public sealed class MonthlyBarChartControl : Control
     private int _hoveredIndex = -1;
 
     private static readonly IBrush BlueBrush = Brush.Parse("#2563EB");
-    private static readonly IBrush GreenBrush = Brush.Parse("#16A34A");
+    private static readonly IBrush GreenBrush = Brush.Parse("#15803D");
     private static readonly IBrush BlueMutedBrush = Brush.Parse("#93C5FD");
     private static readonly IBrush GreenMutedBrush = Brush.Parse("#86EFAC");
     private static readonly Pen GridPen = new(Brush.Parse("#E2E8F0"), 1);
-    private static readonly IBrush AxisTextBrush = Brush.Parse("#64748B");
+    private static readonly IBrush AxisTextBrush = Brush.Parse("#475569");
     private static readonly IBrush DarkTextBrush = Brush.Parse("#0F172A");
 
     public void SetData(IReadOnlyList<MonthlyBalanceRow> rows, string? highlightedYm = null)
@@ -195,7 +195,7 @@ public sealed class CompositionDonutControl : Control
         double midR = (outerR + innerR) / 2.0;
 
         long total = _entradasCents + _saidasCents;
-        var greenPen = new Pen(Brush.Parse("#16A34A"), strokeW, lineCap: PenLineCap.Flat);
+        var greenPen = new Pen(Brush.Parse("#15803D"), strokeW, lineCap: PenLineCap.Flat);
         var bluePen = new Pen(Brush.Parse("#2563EB"), strokeW, lineCap: PenLineCap.Flat);
         var emptyPen = new Pen(Brush.Parse("#E2E8F0"), strokeW);
 
@@ -236,7 +236,7 @@ public sealed class CompositionDonutControl : Control
 
         double fontSize = total >= 100_000_000 ? 11.5 : 13.0;
         var ftVal = new FormattedText(centerMoney, CultureInfo.GetCultureInfo("pt-BR"), FlowDirection.LeftToRight, tfBold, fontSize, Brush.Parse("#0F172A"));
-        var ftSub = new FormattedText("Movimentado", CultureInfo.GetCultureInfo("pt-BR"), FlowDirection.LeftToRight, tfReg, 10.5, Brush.Parse("#64748B"));
+        var ftSub = new FormattedText("Movimentado", CultureInfo.GetCultureInfo("pt-BR"), FlowDirection.LeftToRight, tfReg, 11, Brush.Parse("#475569"));
 
         ctx.DrawText(ftVal, new Point(cx - ftVal.Width / 2, cy - ftVal.Height + 2));
         ctx.DrawText(ftSub, new Point(cx - ftSub.Width / 2, cy + 2));

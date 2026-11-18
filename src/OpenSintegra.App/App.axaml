@@ -2,10 +2,230 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="OpenSintegra.App.App"
              RequestedThemeVariant="Light">
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- Semantic Surface Tokens -->
+      <SolidColorBrush x:Key="Brush.Surface.App" Color="#EEF2F6"/>
+      <SolidColorBrush x:Key="Brush.Surface.Card" Color="#FFFFFF"/>
+      <SolidColorBrush x:Key="Brush.Surface.Subtle" Color="#F8FAFC"/>
+      <SolidColorBrush x:Key="Brush.Surface.Header" Color="#F1F5F9"/>
+      <SolidColorBrush x:Key="Brush.Surface.Selected" Color="#DBEAFE"/>
+      <SolidColorBrush x:Key="Brush.Surface.Hover" Color="#EFF6FF"/>
+      <SolidColorBrush x:Key="Brush.Surface.Danger" Color="#FEF2F2"/>
+      <SolidColorBrush x:Key="Brush.Surface.DangerPill" Color="#FEE2E2"/>
+      <SolidColorBrush x:Key="Brush.Surface.SuccessPill" Color="#DCFCE7"/>
+
+      <!-- Semantic Border Tokens -->
+      <SolidColorBrush x:Key="Brush.Border.Subtle" Color="#E2E8F0"/>
+      <SolidColorBrush x:Key="Brush.Border.Default" Color="#CBD5E1"/>
+      <SolidColorBrush x:Key="Brush.Border.Card" Color="#D5DEE8"/>
+      <SolidColorBrush x:Key="Brush.Border.Focus" Color="#1E40AF"/>
+      <SolidColorBrush x:Key="Brush.Border.Danger" Color="#FECACA"/>
+
+      <!-- WCAG AA Verified Text Tokens (>= 4.5:1) -->
+      <SolidColorBrush x:Key="Brush.Text.Primary" Color="#0F172A"/>
+      <SolidColorBrush x:Key="Brush.Text.Body" Color="#334155"/>
+      <SolidColorBrush x:Key="Brush.Text.Muted" Color="#475569"/>
+      <SolidColorBrush x:Key="Brush.Text.Link" Color="#1D4ED8"/>
+      <SolidColorBrush x:Key="Brush.Text.ActiveNav" Color="#1E3A8A"/>
+      <SolidColorBrush x:Key="Brush.Text.Success" Color="#15803D"/>
+      <SolidColorBrush x:Key="Brush.Text.Warning" Color="#B45309"/>
+      <SolidColorBrush x:Key="Brush.Text.Danger" Color="#B91C1C"/>
+      <SolidColorBrush x:Key="Brush.Text.Info" Color="#0369A1"/>
+
+      <!-- Action Fill Tokens (WCAG AA >= 4.5:1 with #FFFFFF) -->
+      <SolidColorBrush x:Key="Brush.Action.Primary" Color="#2563EB"/>
+      <SolidColorBrush x:Key="Brush.Action.Primary.Hover" Color="#1D4ED8"/>
+      <SolidColorBrush x:Key="Brush.Action.Primary.Pressed" Color="#1E40AF"/>
+      <SolidColorBrush x:Key="Brush.Action.Success" Color="#15803D"/>
+      <SolidColorBrush x:Key="Brush.Action.Success.Hover" Color="#166534"/>
+      <SolidColorBrush x:Key="Brush.Action.Success.Pressed" Color="#14532D"/>
+    </ResourceDictionary>
+  </Application.Resources>
+
   <Application.Styles>
     <FluentTheme />
+
     <Style Selector="MenuItem">
       <Setter Property="FontSize" Value="12.5"/>
+    </Style>
+
+    <Style Selector="Button:focus-visible">
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Focus}"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- Ribbon Toolbar Buttons -->
+    <Style Selector="Button.ribbon">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="12,5"/>
+      <Setter Property="CornerRadius" Value="5"/>
+      <Setter Property="MinWidth" Value="78"/>
+    </Style>
+    <Style Selector="Button.ribbon:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Border.Subtle}"/>
+    </Style>
+    <Style Selector="Button.ribbon:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Border.Default}"/>
+    </Style>
+
+    <!-- Sidebar Navigation Buttons -->
+    <Style Selector="Button.nav">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="CornerRadius" Value="5"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.App}"/>
+    </Style>
+    <Style Selector="Button.nav.active">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Selected}"/>
+      <Setter Property="BorderBrush" Value="#93C5FD"/>
+    </Style>
+    <Style Selector="Button.nav.active:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#BFDBFE"/>
+    </Style>
+
+    <!-- Primary Action Button -->
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{StaticResource Brush.Action.Primary}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Action.Primary}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="5"/>
+      <Setter Property="Padding" Value="12,7"/>
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Action.Primary.Hover}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Action.Primary.Pressed}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- Success Save / Confirm Action Button -->
+    <Style Selector="Button.success">
+      <Setter Property="Background" Value="{StaticResource Brush.Action.Success}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Action.Success}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="14,7"/>
+    </Style>
+    <Style Selector="Button.success:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Action.Success.Hover}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.success:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Action.Success.Pressed}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- Secondary / Quick Action Buttons -->
+    <Style Selector="Button.quick">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Subtle}"/>
+      <Setter Property="Foreground" Value="{StaticResource Brush.Text.Body}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Default}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="5"/>
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+    <Style Selector="Button.quick:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Header}"/>
+    </Style>
+    <Style Selector="Button.quick:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Border.Subtle}"/>
+    </Style>
+
+    <!-- Filter Chips -->
+    <Style Selector="Button.chip">
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Card}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Default}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Foreground" Value="{StaticResource Brush.Text.Body}"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="Margin" Value="0,0,6,4"/>
+      <Setter Property="CornerRadius" Value="5"/>
+    </Style>
+    <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Subtle}"/>
+    </Style>
+    <Style Selector="Button.chip.active">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Selected}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Action.Primary}"/>
+      <Setter Property="Foreground" Value="{StaticResource Brush.Text.ActiveNav}"/>
+    </Style>
+    <Style Selector="Button.chip.active:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#BFDBFE"/>
+    </Style>
+
+    <!-- Alert Cards -->
+    <Style Selector="Button.alert">
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Subtle}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Default}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="5"/>
+      <Setter Property="Padding" Value="10,8"/>
+    </Style>
+    <Style Selector="Button.alert:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Header}"/>
+    </Style>
+    <Style Selector="Button.alert.danger">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Danger}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Danger}"/>
+    </Style>
+    <Style Selector="Button.alert.danger:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.DangerPill}"/>
+    </Style>
+
+    <!-- Inline Table Action & Row Buttons -->
+    <Style Selector="Button.row-action">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Header}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Border.Default}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Foreground" Value="{StaticResource Brush.Text.Body}"/>
+      <Setter Property="Padding" Value="8,3"/>
+      <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="Button.row-action:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Border.Subtle}"/>
+    </Style>
+    <Style Selector="Button.row-action.accent">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Hover}"/>
+      <Setter Property="BorderBrush" Value="#93C5FD"/>
+      <Setter Property="Foreground" Value="{StaticResource Brush.Text.Link}"/>
+    </Style>
+    <Style Selector="Button.row-action.accent:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Selected}"/>
+    </Style>
+
+    <Style Selector="Button.table-row">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="CornerRadius" Value="0"/>
+    </Style>
+    <Style Selector="Button.table-row:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Surface.Hover}"/>
     </Style>
   </Application.Styles>
 </Application>

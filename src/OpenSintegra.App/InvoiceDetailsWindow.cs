@@ -116,7 +116,7 @@ public sealed class InvoiceDetailsWindow : Window
         void AddKv(int col, int row, string k, string v, string? color = null)
         {
             var sp = new StackPanel { Margin = new Thickness(0, 4, 12, 4) };
-            sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#64748B") });
+            sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#475569") });
             sp.Children.Add(new TextBlock { Text = v, FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = Brush.Parse(color ?? "#0F172A") });
             Grid.SetColumn(sp, col);
             Grid.SetRow(sp, row);
@@ -240,7 +240,7 @@ public sealed class InvoiceDetailsWindow : Window
                 {
                     Text = "Esta nota fiscal foi escriturada apenas pelo resumo do Registro 50 (sem itens Reg. 54 detalhados neste arquivo).",
                     FontSize = 12,
-                    Foreground = Brush.Parse("#64748B"),
+                    Foreground = Brush.Parse("#475569"),
                     TextWrapping = TextWrapping.Wrap
                 }
             };

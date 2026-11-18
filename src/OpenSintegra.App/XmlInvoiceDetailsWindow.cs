@@ -110,11 +110,11 @@ public sealed class XmlInvoiceDetailsWindow : Window
         void AddKv(int col, int row, string k, string v, string? color = null)
         {
             var sp = new StackPanel { Margin = new Thickness(0, 3, 12, 3) };
-            sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#64748B") });
+            sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#475569") });
             sp.Children.Add(new TextBlock
             {
                 Text = v,
-                FontSize = 12.2,
+                FontSize = 12,
                 FontWeight = FontWeight.SemiBold,
                 Foreground = Brush.Parse(color ?? "#0F172A"),
                 TextTrimming = TextTrimming.CharacterEllipsis
@@ -176,7 +176,7 @@ public sealed class XmlInvoiceDetailsWindow : Window
             {
                 Text = xml.FileName,
                 FontSize = 11,
-                Foreground = Brush.Parse("#64748B"),
+                Foreground = Brush.Parse("#475569"),
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0, 0, 0),
                 MaxWidth = 220,
@@ -252,7 +252,7 @@ public sealed class XmlInvoiceDetailsWindow : Window
             var tb = new TextBlock
             {
                 Text = text,
-                FontSize = 11.3,
+                FontSize = 11.5,
                 FontWeight = bold ? FontWeight.SemiBold : FontWeight.Normal,
                 Foreground = Brush.Parse(hex),
                 TextAlignment = right ? TextAlignment.Right : TextAlignment.Left,
@@ -298,7 +298,7 @@ public sealed class XmlInvoiceDetailsWindow : Window
                 {
                     Text = "Nenhum item de mercadoria (<det>) detalhado neste XML.",
                     FontSize = 12,
-                    Foreground = Brush.Parse("#64748B"),
+                    Foreground = Brush.Parse("#475569"),
                     TextWrapping = TextWrapping.Wrap
                 }
             };
@@ -323,7 +323,7 @@ public sealed class XmlInvoiceDetailsWindow : Window
                     AddCell(g, 3, it.Ncm, false, false, "#475569");
                     AddCell(g, 4, it.OrigCfop, false, true, "#1D4ED8");
                     AddCell(g, 5, it.CstCsosn, false, false, "#475569");
-                    AddCell(g, 6, it.Unidade, false, false, "#64748B");
+                    AddCell(g, 6, it.Unidade, false, false, "#475569");
                     AddCell(g, 7, TaxIdValidator.FormatMilliBr(it.QuantidadeMilli), true, false, "#334155");
                     AddCell(g, 8, $"R$ {TaxIdValidator.FormatCentsBrl(it.ValorBrutoCents)}", true, true, "#0F172A");
                     AddCell(g, 9, $"{it.AliquotaIcmsBps / 100.0:N1}%", true, false, "#475569");
@@ -365,13 +365,10 @@ public sealed class XmlInvoiceDetailsWindow : Window
             var btnLaunch = new Button
             {
                 Content = "Lançar esta NF no Sintegra...",
-                Background = Brush.Parse("#16A34A"),
-                BorderThickness = new Thickness(0),
-                Foreground = Brushes.White,
                 FontWeight = FontWeight.SemiBold,
-                Padding = new Thickness(16, 7),
-                CornerRadius = new CornerRadius(5)
+                Padding = new Thickness(16, 7)
             };
+            btnLaunch.Classes.Add("success");
             btnLaunch.Click += (_, _) => { LaunchRequested = true; Close(); };
             Grid.SetColumn(btnLaunch, 0);
             foot.Children.Add(btnLaunch);
@@ -380,13 +377,10 @@ public sealed class XmlInvoiceDetailsWindow : Window
         var btnClose = new Button
         {
             Content = "Fechar",
-            Background = Brush.Parse("#2563EB"),
-            BorderThickness = new Thickness(0),
-            Foreground = Brushes.White,
             FontWeight = FontWeight.SemiBold,
-            Padding = new Thickness(20, 7),
-            CornerRadius = new CornerRadius(5)
+            Padding = new Thickness(20, 7)
         };
+        btnClose.Classes.Add("primary");
         btnClose.Click += (_, _) => Close();
         Grid.SetColumn(btnClose, 2);
         foot.Children.Add(btnClose);

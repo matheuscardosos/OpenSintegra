@@ -73,7 +73,7 @@ public sealed class ImportProgressWindow : Window
         _progressBar.Maximum = 100;
         _progressBar.Value = 5;
         _progressBar.Height = 14;
-        _progressBar.Foreground = Brush.Parse("#16A34A");
+        _progressBar.Foreground = Brush.Parse("#15803D");
         _progressBar.Background = Brush.Parse("#E2E8F0");
         _progressBar.CornerRadius = new CornerRadius(4);
         _progressBar.VerticalAlignment = VerticalAlignment.Center;

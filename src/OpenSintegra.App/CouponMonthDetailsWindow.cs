@@ -75,7 +75,7 @@ public sealed class CouponMonthDetailsWindow : Window
                 new TextBlock
                 {
                     Text = $"Cupons NFC-e do Dia {TaxIdValidator.FormatDateBr(couponDay.DataEmissao)}  |  Modelo {couponDay.Modelo}  |  Série '{couponDay.Serie.Trim()}'",
-                    FontSize = 15.5,
+                    FontSize = 15,
                     FontWeight = FontWeight.Bold,
                     Foreground = Brush.Parse("#0F172A")
                 },
@@ -110,7 +110,7 @@ public sealed class CouponMonthDetailsWindow : Window
         void AddKv(int col, string k, string v, string? hex = null)
         {
             var sp = new StackPanel { Margin = new Thickness(0, 2, 12, 2) };
-            sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#64748B") });
+            sp.Children.Add(new TextBlock { Text = k, FontSize = 11, Foreground = Brush.Parse("#475569") });
             sp.Children.Add(new TextBlock { Text = v, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = Brush.Parse(hex ?? "#0F172A") });
             Grid.SetColumn(sp, col);
             kvGrid.Children.Add(sp);
@@ -237,7 +237,7 @@ public sealed class CouponMonthDetailsWindow : Window
                 {
                     Text = $"Nenhum Registro 61R (resumo mensal de produtos vendidos por cupom) encontrado para {monthLabel}.",
                     FontSize = 12,
-                    Foreground = Brush.Parse("#64748B"),
+                    Foreground = Brush.Parse("#475569"),
                     TextWrapping = TextWrapping.Wrap
                 }
             };
@@ -262,7 +262,7 @@ public sealed class CouponMonthDetailsWindow : Window
                     var g = MakeGrid();
                     AddCell(g, 0, it.CodProduto, false, false, "#334155");
                     AddCell(g, 1, desc, false, false, "#0F172A");
-                    AddCell(g, 2, un, false, false, "#64748B");
+                    AddCell(g, 2, un, false, false, "#475569");
                     AddCell(g, 3, TaxIdValidator.FormatMilliBr(it.QuantidadeMilli), true, false, "#334155");
                     AddCell(g, 4, $"R$ {TaxIdValidator.FormatCentsBrl(it.ValorBrutoCents)}", true, true, "#15803D");
                     AddCell(g, 5, $"R$ {TaxIdValidator.FormatCentsBrl(it.BaseIcmsCents)}", true, false, "#475569");
